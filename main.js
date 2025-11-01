@@ -126,8 +126,8 @@ function updateDynamicUI() {
     customCopGroup.classList.toggle('hidden', etaMode !== 'custom_cop');
 }
 
-// (V5.1.1 修正版)
-function showMessage(message, isError = true) {
+// [V5.4.0] 替换此函数
+function showMessage(message, isError = true, warnings = []) {
     resultsDiv.classList.remove('hidden');
     resultMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'bg-yellow-100', 'text-yellow-700', 'opacity-0');
     resultMessage.classList.add('opacity-100');
@@ -143,7 +143,18 @@ function showMessage(message, isError = true) {
     } else {
         resultData.classList.remove('hidden');
         resultMessage.classList.add('bg-green-100', 'text-green-700');
-        resultMessage.innerHTML = `<span class="font-bold">计算成功：</span> ${message}`;
+        
+        // --- NEW V5.4.0: 构建并插入警告 HTML ---
+        let warningHtml = '';
+        if (warnings && warnings.length > 0) {
+            // 注意: Tailwind JIT 需要看到完整的类名，这里使用内联样式替代 bg-yellow-100 等
+            warningHtml = `<div class="mt-2 p-3 text-sm rounded-md border text-left" style="background-color: #fffbeb; color: #92400e; border-color: #fde68a;">
+                               <b>物理约束警告：</b><br>${warnings.join('<br>')}
+                           </div>`;
+        }
+        // --- End NEW V5.4.0 ---
+
+        resultMessage.innerHTML = `<span class="font-bold">计算成功：</span> ${message} ${warningHtml}`;
         resultActions.classList.remove('hidden');
     }
 }
@@ -161,28 +172,36 @@ function clearResultFields() {
     if (sinkRHAfterHumidGroup) sinkRHAfterHumidGroup.classList.add('hidden');
 }
 
+// [V5.4.0] 替换此函数
 function displayResults(data) {
-    showMessage(data.message, !data.feasibility);
+    // V5.4.0: 将 data.warnings 传递给 showMessage
+    showMessage(data.message, !data.feasibility, data.warnings || []);
+    
     if (!data.feasibility) return;
+
     const num = (n, dec = 2) => (n === null || typeof n === 'undefined' || isNaN(n)) ? '---' : n.toFixed(dec);
     const kw = (n) => `${num(n, 2)} kW`;
     const kg_h = (n) => `${num(n, 3)} kg/h`;
     const percent = (n) => `${num(n, 1)} %`; 
+    
     const feasibilityEl = document.getElementById('resFeasibility');
     feasibilityEl.textContent = data.feasibility ? '可行' : '不可行';
     feasibilityEl.className = data.feasibility ? 'font-bold text-lg text-green-600' : 'font-bold text-lg text-red-600';
+    
     sourceResultGroup.classList.toggle('hidden', data.source.type !== 'air');
     if (data.source.type === 'air') {
         document.getElementById('resSourceSensible').textContent = kw(data.source.qSensible);
         document.getElementById('resSourceLatent').textContent = kw(data.source.qLatent);
         document.getElementById('resSourceWater').textContent = kg_h(Math.abs(data.source.water_kg_h));
     }
+    
     sinkResultGroup.classList.toggle('hidden', data.sink.type !== 'air' && data.sink.type !== 'steam');
     const isAirSink = data.sink.type === 'air';
     sinkAirHumidPotGroup.classList.toggle('hidden', !isAirSink);
     sinkAirRHOutGroup.classList.toggle('hidden', !isAirSink);
     sinkEnergyEvapCapGroup.classList.toggle('hidden', !isAirSink); 
     sinkRHAfterHumidGroup.classList.toggle('hidden', !isAirSink);
+    
     if (isAirSink) {
         document.getElementById('resSinkParam1Label').textContent = '显热负荷 (Q_sens)：';
         document.getElementById('resSinkParam1Value').textContent = kw(data.sink.qSensible);
@@ -203,6 +222,7 @@ function displayResults(data) {
         document.getElementById('resSinkParam3Label').textContent = '潜热负荷 (Q_lat)：';
         document.getElementById('resSinkParam3Value').textContent = kw(data.sink.qLatent);
     }
+    
     document.getElementById('resQcold').textContent = kw(data.qCold_kW);
     document.getElementById('resQhot').textContent = kw(data.qHot_kW);
     document.getElementById('resW').textContent = kw(data.W_kW);
@@ -332,8 +352,12 @@ function performCalculation() {
     }
 }
 
+// [V5.4.0] 替换此函数
 function parseAndValidateInputs(p) {
     const errors = [];
+    // V5.4.0: 增加警告数组
+    const warnings = []; 
+    
     const inputs = { mode: p.calcMode, inputType: p.inputType, source: {}, sink: {}, eta: {}, minTempApproach: 3.0, steamTempApproach: 5.0 };
     const parseFloatStrict = (val, name, allowZero = false, min = -Infinity, max = Infinity) => {
         if (val === null || String(val).trim() === '') { errors.push(`${name} 不能为空。`); return NaN; }
@@ -341,21 +365,37 @@ function parseAndValidateInputs(p) {
         if (isNaN(num) || (!allowZero && num <= 0) || num < min || num > max) { errors.push(`${name} 必须是有效数字 (范围 ${min} ~ ${max})。`); return NaN; }
         return num;
     };
+    
     inputs.source.type = p.sourceType;
     inputs.source.tempIn = parseFloatStrict(p.sourceTempIn, "热源·进口温度", true, -100, 300);
     inputs.source.tempOut = parseFloatStrict(p.sourceTempOut, "热源·出口温度", true, -100, 300);
     if (!isNaN(inputs.source.tempIn) && !isNaN(inputs.source.tempOut) && inputs.source.tempIn <= inputs.source.tempOut) errors.push("热源：进口温度必须高于出口温度。");
+    
     if (inputs.mode === 'source') {
         if (inputs.inputType === 'flow') {
             inputs.source.flow = parseFloatStrict(p.sourceFlow, "热源·可用流量");
             inputs.source.unit = p.sourceUnit;
         } else { inputs.source.load = parseFloatStrict(p.sourceLoad, "热源·可用负荷"); }
     }
+    
     if (inputs.source.type === 'air') {
-        // *** MODIFIED VALIDATION LABEL ***
         inputs.source.pressure = parseFloatStrict(p.sourceAirPressure, "热源·空气压力", true, 0.1, 20);
         inputs.source.rh = parseFloatStrict(p.sourceAirRH, "热源·相对湿度", true, 0, 100);
+
+        // --- NEW V5.4.0: 热源 RH 物理极限检测 ---
+        if (!isNaN(inputs.source.tempIn) && !isNaN(inputs.source.pressure) && !isNaN(inputs.source.rh)) {
+            const P_abs = inputs.source.pressure * 100000;
+            const P_sat = getSatVaporPressure(inputs.source.tempIn);
+            if (P_sat > P_abs) { // 触发了高T低P的极限场景
+                const RH_max_phys = (P_abs / P_sat) * 100;
+                if (inputs.source.rh > RH_max_phys) {
+                    warnings.push(`热源侧：在 ${inputs.source.tempIn}°C 和 ${inputs.source.pressure} bara 下，最大物理 RH 约为 ${RH_max_phys.toFixed(1)}%。输入值 ${inputs.source.rh}% 将按 ${RH_max_phys.toFixed(1)}% 极限值计算。`);
+                }
+            }
+        }
+        // --- End NEW V5.4.0 ---
     }
+    
     inputs.sink.type = p.sinkType;
     if (inputs.sink.type === 'steam') {
         inputs.sink.steamTemp = parseFloatStrict(p.sinkSteamTemp, "热汇·饱和蒸汽温度", true, 1, 250);
@@ -366,23 +406,42 @@ function parseAndValidateInputs(p) {
         inputs.sink.tempOut = parseFloatStrict(p.sinkTempOut, "热汇·目标温度", true, -100, 300);
         if (!isNaN(inputs.sink.tempIn) && !isNaN(inputs.sink.tempOut) && inputs.sink.tempIn >= inputs.sink.tempOut) errors.push("热汇：进口温度必须低于目标温度。");
         if (inputs.sink.type === 'air') {
-             // *** MODIFIED VALIDATION LABEL ***
              inputs.sink.pressure = parseFloatStrict(p.sinkAirPressure, "热汇·空气压力", true, 0.1, 20);
              inputs.sink.rh = parseFloatStrict(p.sinkAirRH, "热汇·相对湿度", true, 0, 100);
+
+             // --- NEW V5.4.0: 热汇 RH 物理极限检测 ---
+             if (!isNaN(inputs.sink.tempIn) && !isNaN(inputs.sink.pressure) && !isNaN(inputs.sink.rh)) {
+                const P_abs = inputs.sink.pressure * 100000;
+                const P_sat = getSatVaporPressure(inputs.sink.tempIn);
+                if (P_sat > P_abs) { // 触发了高T低P的极限场景
+                    const RH_max_phys = (P_abs / P_sat) * 100;
+                    if (inputs.sink.rh > RH_max_phys) {
+                        warnings.push(`热汇侧：在 ${inputs.sink.tempIn}°C 和 ${inputs.sink.pressure} bara 下，最大物理 RH 约为 ${RH_max_phys.toFixed(1)}%。输入值 ${inputs.sink.rh}% 将按 ${RH_max_phys.toFixed(1)}% 极限值计算。`);
+                    }
+                }
+            }
+             // --- End NEW V5.4.0 ---
         }
     }
+    
     if (inputs.mode === 'sink') {
         if (inputs.inputType === 'flow') {
             inputs.sink.flow = parseFloatStrict(p.sinkFlow, "热汇·需求流量");
             inputs.sink.unit = p.sinkUnit;
         } else { inputs.sink.load = parseFloatStrict(p.sinkLoad, "热汇·需求负荷"); }
     }
+    
     inputs.eta.type = p.etaType;
     if (inputs.eta.type === 'custom_eta') inputs.eta.customEta = parseFloatStrict(p.customEta, "自定义 η", false, 0.01, 0.99);
     else if (inputs.eta.type === 'custom_cop') inputs.eta.customCop = parseFloatStrict(p.customCop, "自定义 COP", false, 1.01);
     else inputs.eta.customEta = parseFloat(inputs.eta.type);
+    
     const T_cold_out = inputs.source.tempOut;
     const T_hot_in = (inputs.sink.type === 'steam') ? inputs.sink.steamTemp : inputs.sink.tempIn;
+    
+    // V5.4.0: 附加警告
+    inputs.warnings = warnings; 
+
     if (errors.length > 0) throw new Error(errors.join('<br>'));
     return inputs;
 }
@@ -479,6 +538,7 @@ function calculateLoad(params, hasKnownFlow, isSource) {
     return result;
 }
 
+// [V5.4.0] 替换此函数
 function calculateMatch(inputs, sourceResult, sinkResult) {
     const { source, sink, eta, minTempApproach, steamTempApproach, mode, inputType } = inputs;
     let qCold_kW, qHot_kW, W_kW, copActual, etaActual;
@@ -487,14 +547,20 @@ function calculateMatch(inputs, sourceResult, sinkResult) {
     let energyEvapCap_kg_h = null, rhOut_afterHumid = null; 
     let finalSource = { ...sourceResult };
     let finalSink = { ...sinkResult }; 
+    
     const T_evap_est = source.tempOut - minTempApproach;
     const T_cond_est = (sink.type === 'steam') ? (sink.steamTemp + steamTempApproach) : (sink.tempOut + minTempApproach);
     const T_evap_K = T_evap_est + 273.15, T_cond_K = T_cond_est + 273.15;
+    
     if (T_evap_K >= T_cond_K) throw new Error(`热力学不可能：估算蒸发 (${T_evap_est.toFixed(1)}°C) >= 冷凝 (${T_cond_est.toFixed(1)}°C)。`);
+    
     const copCarnotMax = T_cond_K / (T_cond_K - T_evap_K);
+    
     if (eta.type === 'custom_cop') { copActual = eta.customCop; etaActual = copActual / copCarnotMax; } 
     else { etaActual = eta.customEta; copActual = copCarnotMax * etaActual; }
+    
     if (copActual <= 1) throw new Error(`实际 COP (${copActual.toFixed(2)}) <= 1，不可行。`);
+    
     if (mode === 'source' && inputType === 'flow') {
         qCold_kW = sourceResult.q_kW;
         if (!qCold_kW || qCold_kW <= 0) throw new Error("无法确定有效的制冷量。");
@@ -528,8 +594,10 @@ function calculateMatch(inputs, sourceResult, sinkResult) {
         const { flow: dFlow, unit: dUnit } = calculateFlowFromLoad(sink, qHot_kW, false);
         finalSinkFlow = dFlow; finalSinkFlowUnit = dUnit;
     }
+    
     finalSource = calculateLoad({...source, flow: finalSourceFlow, unit: finalSourceFlowUnit}, true, true);
     finalSink = calculateLoad({...sink, flow: finalSinkFlow, unit: finalSinkFlowUnit}, true, false);
+    
     if (sink.type === 'air') {
         try {
             const W_in_sink = getHumidityRatio(sink.pressure, sink.tempIn, sink.rh);
@@ -565,8 +633,12 @@ function calculateMatch(inputs, sourceResult, sinkResult) {
             maxHumidPot_kg_h = null; rhOut_noHumid = null; energyEvapCap_kg_h = null; rhOut_afterHumid = null;
         }
     }
+    
     return {
         feasibility: true, message: "初步匹配计算完成。",
+        // --- NEW V5.4.0: 传递警告 ---
+        warnings: inputs.warnings || [], 
+        // --- End NEW V5.4.0 ---
         source: { type: source.type, qSensible: finalSource.qSensible, qLatent: finalSource.qLatent, water_kg_h: finalSource.water_kg_h },
         sink: { type: sink.type, steamTemp: sink.steamTemp, qSensible: finalSink.qSensible, qLatent: finalSink.qLatent, water_kg_h: finalSink.water_kg_h, maxHumidPot_kg_h: maxHumidPot_kg_h, rhOut_noHumid: rhOut_noHumid, energyEvapCap_kg_h: energyEvapCap_kg_h, rhOut_afterHumid: rhOut_afterHumid },
         qCold_kW, qHot_kW, W_kW, copActual, copCarnotMax, etaActual,
@@ -861,4 +933,4 @@ function printComparison() {
 // --- Initialization ---
 updateDynamicUI(); 
 // 更新版本号
-console.log("工业热泵匹配计算器 V5.3.0 (打印报告功能) 初始化完成。");
+console.log("工业热泵匹配计算器 V5.4.0 (RH 物理极限警告) 初始化完成。");
