@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工业热泵匹配计算器 V5.3.0 (打印报告功能)</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+        <header class="bg-[var(--color-header)] text-white p-5">
+            <h1 class="text-2xl font-bold text-center tracking-wide">工业热泵匹配计算器 (V5.3.0)</h1>
+        </header>
+
+        <form id="hpCalcForm" class="p-5 md:p-8 space-y-6">
+            
+            <fieldset class="p-4 rounded-lg">
+                <legend class="text-base font-semibold text-gray-700">1. 项目信息</legend>
+                <div class="space-y-4 mt-3">
+                    <div>
+                        <label for="projectName" class="input-label">项目名称</label>
+                        <div class="input-group">
+                            <input type="text" id="projectName" name="projectName" class="input-field rounded-md border-gray-300 shadow-sm focus:border-[var(--color-neutral)] focus:ring-[var(--color-neutral)]" placeholder="例如：徐工一期项目">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="projectDesc" class="input-label">项目描述 / 备注</label>
+                        <div class="input-group">
+                            <textarea id="projectDesc" name="projectDesc" rows="2" class="input-field rounded-md border-gray-300 shadow-sm focus:border-[var(--color-neutral)] focus:ring-[var(--color-neutral)]" placeholder="输入关于此方案的简要描述或备注..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="p-4 rounded-lg">
+                <legend class="text-base font-semibold text-gray-700">2. 计算模式</legend>
+                <div id="calcModeRadios" class="radio-group mt-3">
+                    <input type="radio" id="mode_source" name="calcMode" value="source" checked>
+                    <label for="mode_source">已知热源 (算热汇)</label>
+                    <input type="radio" id="mode_sink" name="calcMode" value="sink">
+                    <label for="mode_sink">已知热汇 (算热源)</label>
+                </div>
+            </fieldset>
+
+            <fieldset class="p-4 rounded-lg">
+                <legend class="text-base font-semibold text-gray-700">3. 计算基准</legend>
+                <div id="inputTypeRadios" class="radio-group mt-3">
+                    <input type="radio" id="type_flow" name="inputType" value="flow" checked>
+                    <label for="type_flow">按流量计算</label>
+                    <input type="radio" id="type_load" name="inputType" value="load">
+                    <label for="type_load">按负荷计算</label>
+                </div>
+            </fieldset>
+
+            <fieldset class="p-4 rounded-lg">
+                <legend class="text-source">4. 热源参数 (Source)</legend>
+                <div class="space-y-4 mt-3">
+                    <div>
+                        <label for="sourceType" class="input-label">热源·介质类型</label>
+                        <div class="input-group">
+                            <select id="sourceType" name="sourceType" class="input-field rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]">
+                                <option value="water">水 (Water)</option>
+                                <option value="air">空气 (Air)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="sourceAirParams" class="hidden space-y-4 pl-4 border-l-2 border-blue-200">
+                        <div>
+                            <label for="sourceAirPressure" class="input-label">热源·空气压力</label>
+                            <div class="input-group">
+                                <input type="number" id="sourceAirPressure" name="sourceAirPressure" value="1.013" step="0.001" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]" placeholder="例如 1.013">
+                                <span class="input-unit">bara</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">有效范围: 0.1 ~ 20 bara (绝对压力)</p>
+                        </div>
+                        <div>
+                            <label for="sourceAirRH" class="input-label">热源·相对湿度</label>
+                            <div class="input-group">
+                                <input type="number" id="sourceAirRH" name="sourceAirRH" value="60" step="1" min="0" max="100" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]" placeholder="例如 60">
+                                <span class="input-unit">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="sourceTempIn" class="input-label">热源·进口温度</label>
+                            <div class="input-group">
+                                <input type="number" id="sourceTempIn" name="sourceTempIn" value="30" placeholder="例如 30" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]">
+                                <span class="input-unit">°C</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="sourceTempOut" class="input-label">热源·出口温度</label>
+                            <div class="input-group">
+                                <input type="number" id="sourceTempOut" name="sourceTempOut" value="25" placeholder="例如 25" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]">
+                                <span class="input-unit">°C</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="sourceFlowGroup">
+                        <label for="sourceFlow" class="input-label">热源·可用流量</label>
+                        <div class="input-group">
+                            <input type="number" id="sourceFlow" name="sourceFlow" value="100" placeholder="例如 100" step="any" class="input-field input-field-with-select rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]">
+                            <select id="sourceUnit" name="sourceUnit" class="input-unit-select rounded-r-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)] bg-gray-50">
+                                <option value="t/h">t/h</option>
+                                <option value="m3/h">m³/h</option>
+                                <option value="L/min">L/min</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="sourceLoadGroup" class="hidden">
+                        <label for="sourceLoad" class="input-label">热源·可用负荷 (Q_cold)</label>
+                        <div class="input-group">
+                            <input type="number" id="sourceLoad" name="sourceLoad" value="1000" placeholder="例如 1000" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]">
+                            <span class="input-unit">kW</span>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="p-4 rounded-lg">
+                <legend class="text-sink">5. 热汇参数 (Sink)</legend>
+                <div class="space-y-4 mt-3">
+                    <div>
+                        <label for="sinkType" class="input-label">热汇·介质类型</label>
+                        <div class="input-group">
+                            <select id="sinkType" name="sinkType" class="input-field rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                                <option value="water">水 (Water)</option>
+                                <option value="air">空气 (Air)</option>
+                                <option value="steam">蒸汽 (Steam)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="sinkAirParams" class="hidden space-y-4 pl-4 border-l-2 border-red-200">
+                         <div>
+                            <label for="sinkAirPressure" class="input-label">热汇·空气压力</label>
+                            <div class="input-group">
+                                <input type="number" id="sinkAirPressure" name="sinkAirPressure" value="1.013" step="0.001" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]" placeholder="例如 1.013">
+                                <span class="input-unit">bara</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">有效范围: 0.1 ~ 20 bara (绝对压力)</p>
+                         </div>
+                         <div>
+                            <label for="sinkAirRH" class="input-label">热汇·相对湿度</label>
+                            <div class="input-group">
+                                <input type="number" id="sinkAirRH" name="sinkAirRH" value="50" step="1" min="0" max="100" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]" placeholder="例如 50">
+                                <span class="input-unit">%</span>
+                            </div>
+                         </div>
+                    </div>
+                    <div id="sinkTempGroup" class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="sinkTempIn" class="input-label">热汇·进口温度</label>
+                            <div class="input-group">
+                                <input type="number" id="sinkTempIn" name="sinkTempIn" value="50" placeholder="例如 50" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                                <span class="input-unit">°C</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="sinkTempOut" class="input-label">热汇·目标温度</label>
+                            <div class="input-group">
+                                <input type="number" id="sinkTempOut" name="sinkTempOut" value="70" placeholder="例如 70" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                                <span class="input-unit">°C</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="sinkSteamParams" class="hidden space-y-4 pl-4 border-l-2 border-red-200">
+                        <div>
+                            <label for="sinkSteamTemp" class="input-label">热汇·饱和蒸汽温度</label>
+                            <div class="input-group">
+                               <input type="number" id="sinkSteamTemp" name="sinkSteamTemp" value="120" placeholder="例如 120" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                               <span class="input-unit">°C</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="sinkMakeupWaterTemp" class="input-label">热汇·补水温度</label>
+                            <div class="input-group">
+                               <input type="number" id="sinkMakeupWaterTemp" name="sinkMakeupWaterTemp" value="20" placeholder="例如 20" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                               <span class="input-unit">°C</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="sinkFlowGroup" class="hidden">
+                        <label for="sinkFlow" class="input-label">热汇·需求流量</label>
+                        <div class="input-group">
+                            <input type="number" id="sinkFlow" name="sinkFlow" value="1" placeholder="例如 1" step="any" class="input-field input-field-with-select rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                            <select id="sinkUnit" name="sinkUnit" class="input-unit-select rounded-r-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)] bg-gray-50">
+                                <option value="t/h">t/h</option>
+                                <option value="m3/h">m³/h</option>
+                                <option value="L/min">L/min</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="sinkLoadGroup" class="hidden">
+                        <label for="sinkLoad" class="input-label">热汇·需求负荷 (Q_hot)</label>
+                        <div class="input-group">
+                            <input type="number" id="sinkLoad" name="sinkLoad" value="1000" placeholder="例如 1000" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                            <span class="input-unit">kW</span>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="p-4 rounded-lg">
+                <legend class="text-perf">6. 性能估算</legend>
+                <div class="space-y-4 mt-3">
+                    <div>
+                        <label for="etaType" class="input-label">性能估算方式</label>
+                         <div class="input-group">
+                            <select id="etaType" name="etaType" class="input-field rounded-md border-gray-300 shadow-sm focus:border-[var(--color-neutral)] focus:ring-[var(--color-neutral)]">
+                                <option value="0.65">0.65 (较优水平)</option>
+                                <option value="0.55" selected>0.55 (典型水平)</option>
+                                <option value="0.50">0.50 (保守水平)</option>
+                                <option value="custom_eta">自定义 η (热力完善度)...</option>
+                                <option value="custom_cop">自定义 COP...</option>
+                            </select>
+                         </div>
+                    </div>
+                    <div id="customEtaGroup" class="hidden">
+                        <label for="customEta" class="input-label">自定义 η (0.01 ~ 0.99)</label>
+                        <div class="input-group">
+                            <input type="number" id="customEta" name="customEta" value="0.55" step="0.01" min="0.01" max="0.99" placeholder="例如 0.6" class="input-field rounded-md border-gray-300 shadow-sm focus:border-[var(--color-neutral)] focus:ring-[var(--color-neutral)]">
+                        </div>
+                    </div>
+                    <div id="customCopGroup" class="hidden">
+                        <label for="customCop" class="input-label">自定义 COP (> 1.01)</label>
+                        <div class="input-group">
+                            <input type="number" id="customCop" name="customCop" value="4.0" step="0.1" min="1.01" placeholder="例如 4.0" class="input-field rounded-md border-gray-300 shadow-sm focus:border-[var(--color-neutral)] focus:ring-[var(--color-neutral)]">
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="grid grid-cols-2 gap-4 pt-4">
+                <button type="button" id="calcButton" class="w-full bg-[var(--color-action)] text-white font-bold py-3 px-4 rounded-md shadow-md hover:bg-orange-800 transition duration-200 flex items-center justify-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    <span>开始计算</span>
+                </button>
+                <button type="button" id="resetButton" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-md shadow-md hover:bg-gray-600 transition duration-200 flex items-center justify-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                    <span>重置参数</span>
+                </button>
+            </div>
+        </form>
+
+        <div id="results" class="p-5 md:p-8 border-t border-gray-200 hidden">
+            <h2 class="text-2xl font-bold text-center mb-2 text-gray-800">计算结果</h2>
+
+            <div id="resultActions" class="flex gap-4 justify-center mb-6 hidden">
+                <button type="button" id="saveCaseButton" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-green-700 transition duration-200 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block -mt-1 mr-1"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                    暂存此方案
+                </button>
+                <button type="button" id="printSingleButton" class="bg-gray-500 text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-gray-600 transition duration-200 text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block -mt-1 mr-1"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6 18.25M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5M3.75 18h16.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                    打印此报告
+                </button>
+            </div>
+
+            <div id="resultMessage" class="mb-4 p-4 rounded-md text-center font-medium opacity-0 transition-opacity duration-300"></div>
+            <div id="resultData" class="space-y-5 hidden">
+                
+                <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
+                    <h3 class="font-semibold text-gray-700 mb-2">可行性</h3>
+                    <dl class="space-y-1">
+                        <div class="flex justify-between items-center">
+                            <dt class="text-gray-600">匹配可行性：</dt>
+                            <dd id="resFeasibility" class="font-bold text-lg text-gray-700">---</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div id="sourceResultGroup" class="p-4 bg-blue-50 rounded-lg shadow-inner hidden">
+                    <h3 class="font-semibold text-[var(--color-source)] mb-2">热源特性</h3>
+                    <dl class="space-y-1">
+                        <div class="flex justify-between items-center">
+                            <dt class="text-gray-600">显热负荷 (Q_sens)：</dt>
+                            <dd id="resSourceSensible" class="font-semibold text-blue-700">---</dd>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <dt class="text-gray-600">潜热负荷 (Q_lat)：</dt>
+                            <dd id="resSourceLatent" class="font-semibold text-blue-700">---</dd>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <dt class="text-gray-600">析出水量：</dt>
+                            <dd id="resSourceWater" class="font-semibold text-blue-700">---</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div id="sinkResultGroup" class="p-4 bg-red-50 rounded-lg shadow-inner hidden">
+                     <h3 class="font-semibold text-[var(--color-sink)] mb-2">热汇特性</h3>
+                     <dl class="space-y-1">
+                         <div class="flex justify-between items-center">
+                             <dt id="resSinkParam1Label" class="text-gray-600">参数1：</dt>
+                             <dd id="resSinkParam1Value" class="font-semibold text-red-700">---</dd>
+                         </div>
+                         <div class="flex justify-between items-center">
+                             <dt id="resSinkParam2Label" class="text-gray-600">参数2：</dt>
+                             <dd id="resSinkParam2Value" class="font-semibold text-red-700">---</dd>
+                         </div>
+                         <div class="flex justify-between items-center">
+                             <dt id="resSinkParam3Label" class="text-gray-600">参数3：</dt>
+                             <dd id="resSinkParam3Value" class="font-semibold text-red-700">---</dd>
+                         </div>
+                         <div id="sinkAirHumidPotGroup" class="flex justify-between items-center hidden">
+                             <dt class="text-gray-600">空气吸湿潜力：</dt>
+                             <dd id="resSinkAirHumidPot" class="font-semibold text-red-700">---</dd>
+                         </div>
+                         <div id="sinkAirRHOutGroup" class="flex justify-between items-center hidden">
+                             <dt class="text-gray-600">加热后相对湿度(无加湿)：</dt>
+                             <dd id="resSinkAirRHOut" class="font-semibold text-red-700">---</dd>
+                         </div>
+                         <div id="sinkEnergyEvapCapGroup" class="hidden"> <div class="flex justify-between items-center">
+                                 <dt class="text-gray-600">能量约束蒸发能力：</dt>
+                                 <dd id="resSinkEnergyEvapCap" class="font-semibold text-red-700">---</dd>
+                             </div>
+                             <p class="text-xs text-gray-500 mt-1 result-note">注：此值为热泵供热量(Q_hot)支持的最大理论蒸发量，实际除湿量可能受空气吸湿能力及物料传质限制。</p>
+                         </div>
+                         <div id="sinkRHAfterHumidGroup" class="flex justify-between items-center hidden">
+                             <dt class="text-gray-600">最大加湿后相对湿度：</dt>
+                             <dd id="resSinkRHAfterHumid" class="font-semibold text-red-700">---</dd>
+                         </div>
+                     </dl>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
+                    <h3 class="font-semibold text-gray-700 mb-2">系统总览</h3>
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                        <div class="flex flex-col p-3 bg-white rounded shadow">
+                            <dt class="text-sm text-gray-500">热泵制冷量 (Q_cold)</dt>
+                            <dd id="resQcold" class="font-bold text-lg text-[var(--color-source)]">---</dd>
+                        </div>
+                        <div class="flex flex-col p-3 bg-white rounded shadow">
+                            <dt class="text-sm text-gray-500">热泵制热量 (Q_hot)</dt>
+                            <dd id="resQhot" class="font-bold text-lg text-[var(--color-sink)]">---</dd>
+                        </div>
+                        <div class="flex flex-col p-3 bg-white rounded shadow">
+                            <dt class="text-sm text-gray-500">所需压缩机功 (W)</dt>
+                            <dd id="resW" class="font-bold text-lg text-yellow-600">---</dd>
+                        </div>
+                        <div class="flex flex-col p-3 bg-white rounded shadow">
+                            <dt class="text-sm text-gray-500">热源·计算流量</dt>
+                            <dd id="resSourceFlow" class="font-bold text-lg text-gray-800">---</dd>
+                        </div>
+                        <div class="flex flex-col p-3 bg-white rounded shadow">
+                            <dt class="text-sm text-gray-500">热汇·计算流量</dt>
+                            <dd id="resSinkFlow" class="font-bold text-lg text-gray-800">---</dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg shadow-inner">
+                    <h3 class="font-semibold text-gray-700 mb-2">性能系数</h3>
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                        <div class="flex flex-col p-3 bg-white rounded shadow items-center">
+                            <dt class="text-sm text-gray-500">估算实际 COP_hot (制热)</dt>
+                            <dd id="resCopActual" class="font-bold text-2xl text-green-600">---</dd>
+                        </div>
+                        <div class="flex flex-col p-3 bg-white rounded shadow">
+                            <dt class="text-sm text-gray-500">卡诺(极限) COP_hot</dt>
+                            <dd id="resCopCarnot" class="font-bold text-lg text-gray-700">---</dd>
+                        </div>
+                        <div class="flex flex-col p-3 bg-white rounded shadow sm:col-span-2">
+                            <dt class="text-sm text-gray-500">热力完善度 (η)</dt>
+                            <dd id="resEta" class="font-bold text-lg text-gray-700">---</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div id="comparisonSection" class="p-5 md:p-8 border-t border-gray-200 hidden">
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800">方案对比</h2>
+                <div class="flex gap-4">
+                    <button type="button" id="printComparisonButton" class="bg-[var(--color-action)] text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-orange-800 transition duration-200 text-sm">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block -mt-1 mr-1"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6 18.25M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5M3.75 18h16.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                        打印对比报告
+                    </button>
+                    <button type="button" id="clearCasesButton" class="bg-red-600 text-white font-bold py-2 px-4 rounded-md shadow-md hover:bg-red-700 transition duration-200 text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block -mt-1 mr-1"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12.578 0h16.5" /></svg>
+                        清空所有方案
+                    </button>
+                </div>
+            </div>
+            <div id="comparisonTableContainer" class="overflow-x-auto shadow-md rounded-lg">
+                </div>
+        </div>
+
+        <footer class="p-4 text-center text-xs text-gray-500 bg-gray-100 border-t border-gray-200">
+            <p>本程序已尽力确保正确，但不承担相关法律责任，App bug 请联系荆炎荣 15280122625。</p>
+        </footer>
+    </div>
+
+    <div id="printReportContainer" class="hidden">
+        </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

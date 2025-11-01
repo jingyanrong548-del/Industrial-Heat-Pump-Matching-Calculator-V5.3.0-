@@ -1,0 +1,388 @@
+/* 更新了 :root 变量 */
+:root { 
+    --color-header: #c2410c; /* tailwind-orange-700 (Warm, Industrial) */
+    --color-action: #c2410c; /* The same for the "Calculate" button */
+    --color-source: #2563eb; /* tailwind-blue-600 (Cool) */
+    --color-sink: #dc2626;   /* tailwind-red-600 (Warm) */
+    --color-neutral: #4b5563; /* tailwind-gray-600 (Neutral) */
+}
+body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+/* 加深了边框颜色 */
+fieldset { border-color: #d1d5db; border-width: 1px; }
+legend { font-size: 1.125rem; font-weight: 600; padding: 0 0.5rem; }
+/* 更新了图例颜色变量 */
+legend.text-source { color: var(--color-source); }
+legend.text-sink { color: var(--color-sink); }
+legend.text-perf { color: var(--color-neutral); }
+.input-group { position: relative; }
+.input-field {
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+    position: relative;
+    z-index: 5;
+}
+.input-unit { position: absolute; right: 0; top: 0; height: 100%; display: flex; align-items: center; padding-right: 0.75rem; color: #6b7280; font-size: 0.875rem; border-left: 1px solid #d1d5db; padding-left: 0.5rem; background-color: #f9fafb; border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; z-index: 15; }
+.input-field-with-unit { padding-right: 4.5rem; }
+.input-field-with-select { padding-right: 6.5rem; }
+.input-unit-select { position: absolute; right: 0; top: 0; height: 100%; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-width: 1px; z-index: 15; }
+.radio-group { display: flex; }
+.radio-group input[type="radio"] { display: none; }
+.radio-group label { flex: 1; display: inline-block; padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-left-width: 0; cursor: pointer; transition: all 0.2s; background-color: #fff; font-size: 0.875rem; text-align: center; }
+.radio-group label:first-of-type { border-top-left-radius: 0.375rem; border-bottom-left-radius: 0.375rem; border-left-width: 1px; }
+.radio-group label:last-of-type { border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; }
+/* 更改了 radio 选中颜色 (默认橙色，会被下面 V5.2.1 覆盖) */
+.radio-group input[type="radio"]:checked + label { background-color: var(--color-action); color: white; border-color: var(--color-action); box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); z-index: 1; }
+/* Label style */
+.input-label {
+    display: block;
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500; /* font-medium */
+    color: #374151; /* text-gray-700 */
+    margin-bottom: 0.25rem; /* mb-1 */
+}
+select option:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+}
+
+/* 方案对比表格样式 (无变化) */
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    text-align: left;
+    color: #374151;
+}
+.comparison-table thead {
+    background-color: #f9fafb;
+    border-bottom: 2px solid #e5e7eb;
+}
+.comparison-table th {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #4b5563;
+    vertical-align: top;
+}
+.comparison-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+}
+.comparison-table tbody tr:last-child {
+    border-bottom: none;
+}
+.comparison-table tbody tr:nth-child(even) {
+    background-color: #f9fafb;
+}
+.comparison-table td {
+    padding: 0.75rem 1rem;
+    vertical-align: top;
+    white-space: nowrap;
+}
+.comparison-table td.param-output {
+    font-weight: 600;
+    color: #111827;
+}
+.comparison-table td.param-qhot {
+    font-weight: 700;
+    color: #dc2626; /* red-600 */
+}
+.comparison-table td.param-cop {
+    font-weight: 700;
+    color: #16a34a; /* green-600 */
+}
+
+/* --- V5.2.1: Conditional Radio Button Coloring --- */
+
+/* 当模式为 "已知热源" 时，选中的模式按钮显示蓝色 */
+body.mode-source-active #calcModeRadios input#mode_source:checked + label {
+    background-color: var(--color-source); /* Blue */
+    border-color: var(--color-source);
+    color: white;
+}
+
+/* 当模式为 "已知热源" 时，选中的计算基准按钮也显示蓝色 */
+body.mode-source-active #inputTypeRadios input[type="radio"]:checked + label {
+    background-color: var(--color-source); /* Blue */
+    border-color: var(--color-source);
+    color: white;
+}
+
+/* 当模式不为 "已知热源" 时 (即 "已知热汇")，恢复默认的橙色 */
+/* (需要确保 body 上没有 mode-source-active 类) */
+#calcModeRadios input#mode_sink:checked + label,
+#inputTypeRadios input[type="radio"]:checked + label {
+    background-color: var(--color-action); /* Orange */
+    border-color: var(--color-action);
+    color: white;
+}
+
+/* 确保非 source 模式下，source 按钮恢复默认 */
+#calcModeRadios input#mode_source:checked + label {
+    background-color: var(--color-action); /* Orange */
+    border-color: var(--color-action);
+    color: white;
+}
+/* --- End V5.2.1 --- */
+
+
+/* 打印样式 (Print Styles) */
+@media print {
+    body {
+        background-color: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        font-family: 'Times New Roman', serif;
+        font-size: 10pt;
+    }
+    .max-w-4xl {
+        max-width: none;
+        width: 100%;
+        box-shadow: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+    }
+    /* 更改了页眉打印样式 */
+    header.bg-\[var\(--color-header\)\] {
+        background-color: #fff !important;
+        border-bottom: 2px solid #000;
+    }
+    header.bg-\[var\(--color-header\)\] h1 {
+        color: #000 !important;
+        font-size: 18pt;
+    }
+    
+    /* MODIFIED V5.3.0: Hide elements only if NOT printing single report or comparison */
+    body:not(.printing-single-report):not(.printing-comparison) #hpCalcForm,
+    body:not(.printing-single-report):not(.printing-comparison) footer,
+    body:not(.printing-single-report):not(.printing-comparison) #resultActions,
+    body:not(.printing-single-report):not(.printing-comparison) #comparisonSection
+    {
+        display: none !important;
+    }
+    
+    body:not(.printing-single-report):not(.printing-comparison) #results {
+        display: block !important;
+        border-top: none;
+        padding-top: 1rem;
+    }
+    #resultData {
+        display: block !important;
+    }
+    #resultMessage.bg-green-100 {
+         display: block !important;
+         border: 1px solid #ccc;
+         background: #f9f9f9 !important;
+         color: #000 !important;
+    }
+    #resultMessage.bg-red-100,
+    #resultMessage.bg-yellow-100 {
+        display: none !important;
+    }
+
+    fieldset,
+    #resultData > div,
+    #resultData .bg-white {
+        border-width: 1px;
+        border-color: #ccc;
+        page-break-inside: avoid;
+        background-color: #f9f9f9 !important;
+        box-shadow: none;
+    }
+    #resultData .bg-white {
+         background-color: #fff !important;
+    }
+    
+    /* 更新了颜色重置 */
+    legend, legend.text-source, legend.text-sink, legend.text-perf,
+    #resQcold, #resQhot, #resW, #resCopActual,
+    #resSourceSensible, #resSourceLatent, #resSourceWater,
+    #resSinkParam1Value, #resSinkParam2Value, #resSinkParam3Value,
+    #resSinkAirHumidPot, #resSinkAirRHOut, #resSinkEnergyEvapCap, #resSinkRHAfterHumid,
+    #resFeasibility.text-green-600, #resFeasibility.text-red-600,
+    h3.text-\[var\(--color-source\)\], h3.text-\[var\(--color-sink\)\], /* 更改了选择器 */
+    .input-label, .text-gray-700, .text-gray-800, .text-gray-600, .text-sm
+     {
+        color: #000 !important;
+    }
+
+    /* --- V5.3.0: Single Report Print Styles --- */
+
+    /* When printing a single report, hide the main app and comparison table */
+    body.printing-single-report .max-w-4xl,
+    body.printing-single-report #comparisonSection {
+        display: none !important;
+    }
+    
+    /* Show the dedicated report container */
+    body.printing-single-report #printReportContainer {
+        display: block !important;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #fff !important;
+        font-family: 'Times New Roman', serif;
+        font-size: 10pt;
+    }
+    
+    /* Styles for the generated report */
+    body.printing-single-report #printReportContainer h1 {
+        font-size: 18pt;
+        color: #000 !important;
+        text-align: center;
+        border-bottom: 2px solid #000;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    body.printing-single-report #printReportContainer .report-section {
+        page-break-inside: avoid;
+        margin-bottom: 1rem;
+        border: 1px solid #ccc;
+        overflow: hidden; /* To contain floated elements if any */
+    }
+    
+    body.printing-single-report #printReportContainer .report-section h2 {
+         font-size: 14pt;
+         color: #000 !important;
+         margin: 0;
+         padding: 0.5rem 1rem;
+         background-color: #eee !important;
+         border-bottom: 1px solid #ccc;
+         -webkit-print-color-adjust: exact;
+         print-color-adjust: exact;
+    }
+    
+    body.printing-single-report #printReportContainer .report-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Two columns */
+        gap: 0;
+    }
+
+    body.printing-single-report #printReportContainer dl {
+        padding: 0.5rem 1rem; /* Padding inside the section, under the h2 */
+    }
+    
+    /* For single-column sections */
+    body.printing-single-report #printReportContainer .report-section-single dl {
+         display: grid;
+         grid-template-columns: 1fr 1fr; /* Label/Value pairs */
+         gap: 0.5rem 1rem;
+    }
+
+    /* For two-column (grid) sections */
+    body.printing-single-report #printReportContainer .report-grid dl {
+         padding: 1rem;
+         border-bottom: 1px solid #eee;
+    }
+    body.printing-single-report #printReportContainer .report-grid .report-subsection:nth-child(odd) {
+         border-right: 1px solid #ccc;
+    }
+    body.printing-single-report #printReportContainer .report-grid .report-subsection:nth-last-child(1),
+    body.printing-single-report #printReportContainer .report-grid .report-subsection:nth-last-child(2) {
+         border-bottom: none;
+    }
+    body.printing-single-report #printReportContainer .report-grid h3 {
+         font-size: 12pt;
+         font-weight: bold;
+         margin-bottom: 0.5rem;
+         padding-bottom: 0.25rem;
+         border-bottom: 1px solid #eee;
+    }
+    
+    body.printing-single-report #printReportContainer .report-grid dl div,
+    body.printing-single-report #printReportContainer .report-section-single dl dt,
+    body.printing-single-report #printReportContainer .report-section-single dl dd {
+        display: contents; /* Allows grid layout on dl */
+    }
+
+    body.printing-single-report #printReportContainer .report-grid dl div {
+        display: grid;
+        grid-template-columns: subgrid;
+        grid-column: 1 / -1;
+        padding: 4px 0;
+    }
+    
+    body.printing-single-report #printReportContainer .report-grid dl div:nth-child(even) {
+        background-color: #f9f9f9 !important; /* Zebra striping */
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    body.printing-single-report #printReportContainer dt {
+        font-weight: normal;
+        color: #333 !important;
+        padding-right: 1rem;
+    }
+    
+    body.printing-single-report #printReportContainer dd {
+        font-weight: bold;
+        color: #000 !important;
+        text-align: left;
+    }
+
+    /* Highlight key results */
+    body.printing-single-report #printReportContainer dd.res-qhot { color: #dc2626 !important; }
+    body.printing-single-report #printReportContainer dd.res-cop { color: #16a34a !important; }
+    body.printing-single-report #printReportContainer dd.res-feasibility-ok { color: #16a34a !important; }
+    body.printing-single-report #printReportContainer dd.res-feasibility-fail { color: #dc2626 !important; }
+
+    /* --- End V5.3.0 Styles --- */
+
+    .result-note { display: none !important; }
+
+    body.printing-comparison #hpCalcForm,
+    body.printing-comparison #results,
+    body.printing-comparison footer {
+        display: none !important;
+    }
+
+    body.printing-comparison #comparisonSection {
+        display: block !important;
+        width: 100%;
+    }
+    
+    body.printing-comparison #comparisonSection h2 {
+         color: #000 !important;
+         font-size: 16pt;
+         text-align: center;
+    }
+
+    body.printing-comparison #comparisonSection .flex-wrap {
+        display: block;
+    }
+    
+    body.printing-comparison #comparisonSection button {
+        display: none !important;
+    }
+    
+    body.printing-comparison #comparisonTableContainer {
+        overflow-x: visible;
+        width: 100%;
+        box-shadow: none;
+    }
+
+    body.printing-comparison .comparison-table {
+        width: 100%;
+        font-size: 8pt;
+        border: 1px solid #333;
+    }
+    body.printing-comparison .comparison-table th,
+    body.printing-comparison .comparison-table td {
+        color: #000 !important;
+        border: 1px solid #999;
+        padding: 4px;
+        white-space: normal;
+    }
+    body.printing-comparison .comparison-table thead {
+        background-color: #eee !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    body.printing-comparison .comparison-table tbody tr:nth-child(even) {
+        background-color: #f9f9f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
