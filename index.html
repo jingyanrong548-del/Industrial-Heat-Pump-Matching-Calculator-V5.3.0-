@@ -3,14 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工业热泵匹配计算器 V5.3.0 (打印报告功能)</title>
+    <title>工业热泵匹配计算器 V5.3.1 (打印报告功能)</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-4 md:p-8">
     <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-        <header class="bg-[var(--color-header)] text-white p-5">
-            <h1 class="text-2xl font-bold text-center tracking-wide">工业热泵匹配计算器 (V5.3.0)</h1>
+        
+        <!-- MODIFIED V5.3.1: 
+             - Added flex layout to header.
+             - Added <img> tag for logo.
+             - Removed text-center from h1.
+        -->
+        <header class="bg-[var(--color-header)] text-white p-5 flex items-center justify-center space-x-4">
+            <!-- 新增的 Logo 图片 -->
+            <!-- 请确保您有一个名为 "logo.jpg" 的文件与此 html 文件在同一目录中 -->
+            <img src="logo.jpg" alt="Logo" class="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm" onerror="this.style.display='none'">
+            
+            <!-- 移除了 text-center 样式 -->
+            <h1 class="text-2xl font-bold tracking-wide">工业热泵匹配计算器 (V5.3.1)</h1>
         </header>
 
         <form id="hpCalcForm" class="p-5 md:p-8 space-y-6">
