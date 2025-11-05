@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工业热泵匹配计算器 V5.6.0 (高精度行业版)</title>
+    <title>工业热泵匹配计算器 V5.7.0 (加湿修正版)</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -13,7 +13,7 @@
         <header class="bg-[var(--color-header)] text-white p-5 flex items-center justify-center space-x-4">
             <img src="logo.jpg" alt="Logo" class="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm" onerror="this.style.display='none'">
             
-            <h1 class="text-2xl font-bold tracking-wide">工业热泵匹配计算器 (V5.6.0)</h1>
+            <h1 class="text-2xl font-bold tracking-wide">工业热泵匹配计算器 (V5.7.0)</h1>
         </header>
 
         <form id="hpCalcForm" class="p-5 md:p-8 space-y-6">
@@ -145,13 +145,21 @@
                             <p class="text-xs text-gray-500 mt-1">有效范围: 0.1 ~ 20 bara (绝对压力)</p>
                          </div>
                          <div>
-                            <label for="sinkAirRH" class="input-label">热汇·相对湿度</label>
+                            <label for="sinkAirRH" class="input-label">热汇·<span class="font-bold text-red-700">进口</span>相对湿度</label>
                             <div class="input-group">
                                 <input type="number" id="sinkAirRH" name="sinkAirRH" value="50" step="1" min="0" max="100" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]" placeholder="例如 50">
                                 <span class="input-unit">%</span>
                             </div>
                          </div>
-                    </div>
+                         <div>
+                            <label for="sinkAirRHOut" class="input-label">热汇·<span class="font-bold text-red-700">目标</span>相对湿度 (选填)</label>
+                            <div class="input-group">
+                                <input type="number" id="sinkAirRHOut" name="sinkAirRHOut" step="0.1" min="0" max="100" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]" placeholder="若留空，则按纯加热计算">
+                                <span class="input-unit">%</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">填写此值 (如 0.3) 以计算加热+加湿/除湿。</p>
+                        </div>
+                        </div>
                     <div id="sinkTempGroup" class="grid grid-cols-2 gap-4">
                         <div>
                             <label for="sinkTempIn" class="input-label">热汇·进口温度</label>
@@ -310,7 +318,7 @@
                              <dd id="resSinkAirHumidPot" class="font-semibold text-red-700">---</dd>
                          </div>
                          <div id="sinkAirRHOutGroup" class="flex justify-between items-center hidden">
-                             <dt class="text-gray-600">加热后相对湿度(无加湿)：</dt>
+                             <dt class="text-gray-600">加热后RH(或目标RH)：</dt>
                              <dd id="resSinkAirRHOut" class="font-semibold text-red-700">---</dd>
                          </div>
                          <div id="sinkEnergyEvapCapGroup" class="hidden"> <div class="flex justify-between items-center">
