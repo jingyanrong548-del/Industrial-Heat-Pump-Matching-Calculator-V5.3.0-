@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>工业热泵匹配计算器 V5.7.0 (加湿修正版)</title>
-    <link rel="stylesheet" href="style.css">
+    <title>工业热泵匹配计算器 V5.8.0 (UI/UX升级版)</title>
+    <link rel="stylesheet" href="/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-4 md:p-8">
+<body class="bg-gray-100 p-2 sm:p-4 md:p-8">
     <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
         
         <header class="bg-[var(--color-header)] text-white p-5 flex items-center justify-center space-x-4">
             <img src="logo.jpg" alt="Logo" class="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm" onerror="this.style.display='none'">
             
-            <h1 class="text-2xl font-bold tracking-wide">工业热泵匹配计算器 (V5.7.0)</h1>
+            <h1 class="text-xl sm:text-2xl font-bold tracking-wide">工业热泵匹配计算器 (V5.8.0)</h1>
         </header>
 
         <form id="hpCalcForm" class="p-5 md:p-8 space-y-6">
@@ -85,20 +85,22 @@
                             </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="sourceTempIn" class="input-label">热源·进口温度</label>
                             <div class="input-group">
-                                <input type="number" id="sourceTempIn" name="sourceTempIn" value="30" placeholder="例如 30" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]">
+                                <input type="number" id="sourceTempIn" name="sourceTempIn" value="30" placeholder="例如 30" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)] transition-all duration-200">
                                 <span class="input-unit">°C</span>
                             </div>
+                            <div class="error-message hidden text-xs text-red-600 mt-1"></div>
                         </div>
                         <div>
                             <label for="sourceTempOut" class="input-label">热源·出口温度</label>
                             <div class="input-group">
-                                <input type="number" id="sourceTempOut" name="sourceTempOut" value="25" placeholder="例如 25" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)]">
+                                <input type="number" id="sourceTempOut" name="sourceTempOut" value="25" placeholder="例如 25" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-source)] focus:ring-[var(--color-source)] transition-all duration-200">
                                 <span class="input-unit">°C</span>
                             </div>
+                            <div class="error-message hidden text-xs text-red-600 mt-1"></div>
                         </div>
                     </div>
                     <div id="sourceFlowGroup">
@@ -160,20 +162,22 @@
                             <p class="text-xs text-gray-500 mt-1">填写此值 (如 0.3) 以计算加热+加湿/除湿。</p>
                         </div>
                         </div>
-                    <div id="sinkTempGroup" class="grid grid-cols-2 gap-4">
+                    <div id="sinkTempGroup" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="sinkTempIn" class="input-label">热汇·进口温度</label>
                             <div class="input-group">
-                                <input type="number" id="sinkTempIn" name="sinkTempIn" value="50" placeholder="例如 50" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                                <input type="number" id="sinkTempIn" name="sinkTempIn" value="50" placeholder="例如 50" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)] transition-all duration-200">
                                 <span class="input-unit">°C</span>
                             </div>
+                            <div class="error-message hidden text-xs text-red-600 mt-1"></div>
                         </div>
                         <div>
                             <label for="sinkTempOut" class="input-label">热汇·目标温度</label>
                             <div class="input-group">
-                                <input type="number" id="sinkTempOut" name="sinkTempOut" value="70" placeholder="例如 70" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)]">
+                                <input type="number" id="sinkTempOut" name="sinkTempOut" value="70" placeholder="例如 70" step="any" class="input-field input-field-with-unit rounded-md border-gray-300 shadow-sm focus:border-[var(--color-sink)] focus:ring-[var(--color-sink)] transition-all duration-200">
                                 <span class="input-unit">°C</span>
                             </div>
+                            <div class="error-message hidden text-xs text-red-600 mt-1"></div>
                         </div>
                     </div>
                     <div id="sinkSteamParams" class="hidden space-y-4 pl-4 border-l-2 border-red-200">
@@ -243,15 +247,24 @@
                 </div>
             </fieldset>
 
-            <div class="grid grid-cols-2 gap-4 pt-4">
-                <button type="button" id="calcButton" class="w-full bg-[var(--color-action)] text-white font-bold py-3 px-4 rounded-md shadow-md hover:bg-orange-800 transition duration-200 flex items-center justify-center space-x-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-4">
+                <button type="button" id="calcButton" class="w-full bg-[var(--color-action)] text-white font-bold py-3 sm:py-3 px-4 rounded-md shadow-md hover:bg-orange-800 active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2 min-h-[44px] touch-manipulation">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                     <span>开始计算</span>
+                    <span id="calcLoadingSpinner" class="hidden">
+                        <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
                 </button>
-                <button type="button" id="resetButton" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-md shadow-md hover:bg-gray-600 transition duration-200 flex items-center justify-center space-x-2">
+                <button type="button" id="resetButton" class="w-full bg-gray-500 text-white font-bold py-3 sm:py-3 px-4 rounded-md shadow-md hover:bg-gray-600 active:scale-95 transition-all duration-200 flex items-center justify-center space-x-2 min-h-[44px] touch-manipulation">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
                     <span>重置参数</span>
                 </button>
+            </div>
+            <div class="text-xs text-gray-500 text-center mt-2">
+                <span class="hidden sm:inline">快捷键：Enter 计算 | Esc 重置</span>
             </div>
         </form>
 
@@ -364,6 +377,9 @@
                         <div class="flex flex-col p-3 bg-white rounded shadow items-center">
                             <dt class="text-sm text-gray-500">估算实际 COP_hot (制热)</dt>
                             <dd id="resCopActual" class="font-bold text-2xl text-green-600">---</dd>
+                            <div id="copProgressBar" class="w-full mt-2 bg-gray-200 rounded-full h-2 hidden">
+                                <div class="bg-green-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
                         </div>
                         <div class="flex flex-col p-3 bg-white rounded shadow">
                             <dt class="text-sm text-gray-500">卡诺(极限) COP_hot</dt>
@@ -372,8 +388,30 @@
                         <div class="flex flex-col p-3 bg-white rounded shadow sm:col-span-2">
                             <dt class="text-sm text-gray-500">热力完善度 (η)</dt>
                             <dd id="resEta" class="font-bold text-lg text-gray-700">---</dd>
+                            <div id="etaProgressBar" class="w-full mt-2 bg-gray-200 rounded-full h-2 hidden">
+                                <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
                         </div>
                     </dl>
+                </div>
+                
+                <!-- 结果可视化图表区域 -->
+                <div id="resultCharts" class="p-4 bg-gray-50 rounded-lg shadow-inner hidden">
+                    <h3 class="font-semibold text-gray-700 mb-4">可视化分析</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded shadow">
+                            <h4 class="text-sm font-semibold text-gray-600 mb-2">能量分布</h4>
+                            <div id="energyChart" class="h-48 flex items-center justify-center text-gray-400">
+                                <canvas id="energyChartCanvas" class="max-w-full"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow">
+                            <h4 class="text-sm font-semibold text-gray-600 mb-2">温度变化</h4>
+                            <div id="tempChart" class="h-48 flex items-center justify-center text-gray-400">
+                                <canvas id="tempChartCanvas" class="max-w-full"></canvas>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -404,6 +442,17 @@
     <div id="printReportContainer" class="hidden">
         </div>
 
-    <script src="main.js"></script>
+    <!-- Toast通知容器 -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+    </div>
+
+    <!-- 示例数据快速填充按钮 -->
+    <button type="button" id="fillExampleButton" class="fixed bottom-4 right-4 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-all duration-200 z-40 hidden sm:block" title="填充示例数据">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+        </svg>
+    </button>
+
+    <script type="module" src="/src/main.js"></script>
 </body>
 </html>

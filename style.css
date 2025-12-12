@@ -5,8 +5,14 @@
     --color-source: #2563eb; /* tailwind-blue-600 (Cool) */
     --color-sink: #dc2626;   /* tailwind-red-600 (Warm) */
     --color-neutral: #4b5563; /* tailwind-gray-600 (Neutral) */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
-body { font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+body { 
+    font-family: 'Inter', 'Noto Sans SC', sans-serif;
+    scroll-behavior: smooth;
+}
 /* 加深了边框颜色 */
 fieldset { border-color: #d1d5db; border-width: 1px; }
 legend { font-size: 1.125rem; font-weight: 600; padding: 0 0.5rem; }
@@ -20,6 +26,18 @@ legend.text-perf { color: var(--color-neutral); }
     width: 100%;
     position: relative;
     z-index: 5;
+    transition: all 0.2s ease-in-out;
+}
+.input-field:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.input-field.error {
+    border-color: #dc2626;
+    background-color: #fef2f2;
+}
+.input-field.success {
+    border-color: #16a34a;
 }
 .input-unit { position: absolute; right: 0; top: 0; height: 100%; display: flex; align-items: center; padding-right: 0.75rem; color: #6b7280; font-size: 0.875rem; border-left: 1px solid #d1d5db; padding-left: 0.5rem; background-color: #f9fafb; border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; z-index: 15; }
 .input-field-with-unit { padding-right: 4.5rem; }
@@ -27,7 +45,27 @@ legend.text-perf { color: var(--color-neutral); }
 .input-unit-select { position: absolute; right: 0; top: 0; height: 100%; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-width: 1px; z-index: 15; }
 .radio-group { display: flex; }
 .radio-group input[type="radio"] { display: none; }
-.radio-group label { flex: 1; display: inline-block; padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-left-width: 0; cursor: pointer; transition: all 0.2s; background-color: #fff; font-size: 0.875rem; text-align: center; }
+.radio-group label { 
+    flex: 1; 
+    display: inline-block; 
+    padding: 0.75rem 1rem; 
+    border: 1px solid #d1d5db; 
+    border-left-width: 0; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    background-color: #fff; 
+    font-size: 0.875rem; 
+    text-align: center;
+    min-height: 44px;
+    touch-action: manipulation;
+}
+.radio-group label:hover {
+    background-color: #f9fafb;
+    transform: translateY(-1px);
+}
+.radio-group label:active {
+    transform: translateY(0);
+}
 .radio-group label:first-of-type { border-top-left-radius: 0.375rem; border-bottom-left-radius: 0.375rem; border-left-width: 1px; }
 .radio-group label:last-of-type { border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; }
 /* 更改了 radio 选中颜色 (默认橙色，会被下面 V5.2.1 覆盖) */
@@ -385,4 +423,249 @@ body.mode-source-active #inputTypeRadios input[type="radio"]:checked + label {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
+}
+
+/* --- V5.8.0: UI/UX 升级样式 --- */
+
+/* 响应式改进 */
+@media (max-width: 640px) {
+    .comparison-table {
+        font-size: 0.75rem;
+    }
+    .comparison-table th,
+    .comparison-table td {
+        padding: 0.5rem 0.25rem;
+    }
+    .comparison-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    fieldset {
+        padding: 0.75rem;
+    }
+    .input-field {
+        font-size: 16px; /* 防止iOS自动缩放 */
+    }
+}
+
+/* 错误消息样式 */
+.error-message {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Toast通知样式 */
+.toast {
+    background-color: white;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: var(--shadow-lg);
+    min-width: 300px;
+    max-width: 400px;
+    pointer-events: auto;
+    animation: slideInRight 0.3s ease-out;
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.toast.success {
+    border-left-color: #16a34a;
+}
+
+.toast.error {
+    border-left-color: #dc2626;
+}
+
+.toast.warning {
+    border-left-color: #f59e0b;
+}
+
+.toast.info {
+    border-left-color: #2563eb;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.toast.fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+/* 加载动画 */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* 结果区域动画 */
+#results {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 进度条样式 */
+.progress-bar-container {
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    height: 0.5rem;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: width 0.5s ease-out;
+}
+
+/* 工具提示样式 */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #1f2937;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 触摸优化 */
+.touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 卡片悬停效果 */
+.result-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* 图表容器 */
+.chart-container {
+    position: relative;
+    height: 200px;
+    width: 100%;
+}
+
+/* 移动端表格优化 */
+@media (max-width: 768px) {
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .comparison-table thead,
+    .comparison-table tbody,
+    .comparison-table tr {
+        display: block;
+    }
+    
+    .comparison-table thead {
+        display: none;
+    }
+    
+    .comparison-table tr {
+        margin-bottom: 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        background-color: white;
+    }
+    
+    .comparison-table td {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border: none;
+        white-space: normal;
+    }
+    
+    .comparison-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        margin-right: 1rem;
+    }
+}
+
+/* 平滑滚动 */
+html {
+    scroll-behavior: smooth;
+}
+
+/* 焦点可见性改进 */
+*:focus-visible {
+    outline: 2px solid var(--color-action);
+    outline-offset: 2px;
+}
+
+/* 按钮禁用状态 */
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }

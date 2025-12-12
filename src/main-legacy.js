@@ -1,124 +1,22 @@
 // --- 全局常量 ---
-const CP_WATER = 4.18; // kJ/kg·K (水介质比热容)
-const R_AIR_DRY = 287.058; // J/kg·K (干空气气体常数)
-const R_VAPOR = 461.52; // J/kg·K (水蒸气气体常数)
+import { CP_WATER, R_AIR_DRY, R_VAPOR } from './constants.js';
+import * as physics from './physics.js';
 
-// --- NEW V5.5.0: 高精度物性核心 (IAPWS & NIST) ---
-
-// IAPWS-IF97 (Region 4) 饱和蒸汽压 (Pa)
-// T (Kelvin) -> P (Pa)
-function getSatVaporPressure_HighAccuracy(T_celsius) {
-    const T = T_celsius + 273.15;
-    if (T <= 273.15 || T >= 647.096) { // 适用范围 0.01°C 到 373.946°C
-        // 对于低于 0°C 的情况，使用 IAPWS 2008 冰线公式 (简化版)
-        if (T <= 273.15) {
-             return 611.21 * Math.exp((18.678 - T_celsius / 234.5) * (T_celsius / (257.14 + T_celsius)));
-        }
-        // 临界点以上或过低，返回 0 
-        return 0;
-    }
-    const T_crit = 647.096; // K
-    const P_crit = 22.064e6; // Pa
-    const v = T / T_crit;
-    const n = [
-        -7.85951783, 1.84408259, -11.7866497, 22.6807411,
-        -15.9618719, 1.80122502
-    ];
-    const t = 1.0 - v;
-    const C = n[0]*t + n[1]*Math.pow(t, 1.5) + n[2]*Math.pow(t, 3) + 
-              n[3]*Math.pow(t, 3.5) + n[4]*Math.pow(t, 4) + n[5]*Math.pow(t, 7.5);
-    return P_crit * Math.exp((T_crit / T) * C);
-}
-
-// NIST 干空气焓值 (kJ/kg) (h=0 at 0°C)
-// T (Celsius) -> h (kJ/kg)
-function getDryAirEnthalpy_HighAccuracy(T_celsius) {
-    // 基于 NIST 多项式 (积分 Cp dT) 从 273.15 K 到 T_kelvin
-    // Cp(T) = a + bT + cT^2 + dT^3 + e/T^2 (Shomate Equation)
-    // h(T) - h(T_ref) = ∫[T_ref, T] Cp(t) dt
-    // 此处使用一个简化的、但在 -100C 到 300C 范围内高精度的多项式积分
-    const T = T_celsius;
-    // h(T) = A*T + B*T^2/2 + C*T^3/3 + ... (设 h(0C) = 0)
-    // 拟合数据: h(T) ≈ 1.0048*T + 0.0000403*T^2
-    // 以下是一个更宽范围的拟合 (kJ/kg)，参考 0°C
-    const h = 1.00315 * T + 0.0001306 * Math.pow(T, 2) - 
-              4.6545e-8 * Math.pow(T, 3) + 1.6368e-11 * Math.pow(T, 4);
-    return h;
-}
-
-// IAPWS-IF97 饱和水蒸气焓值 (kJ/kg) (h=0 for liquid at 0.01°C)
-// T (Celsius) -> h (kJ/kg)
-function getVaporEnthalpy_HighAccuracy(T_celsius) {
-    // h = h_liquid(T) + h_latent(T)
-    // 为简化，我们使用一个高精度拟合多项式 (kJ/kg)
-    // 基于 IAPWS 数据拟合 (h_vapor, T_celsius)
-    if (T_celsius < 0) T_celsius = 0; // 简化处理
-    if (T_celsius > 370) T_celsius = 370; // 临界点附近
-    
-    // h(T) ≈ 2500.9 + 1.8563*T - 0.00125*T^2 + ... (kJ/kg)
-    const T = T_celsius;
-    const h_vap = 2500.8 + 1.8325 * T - 0.000551 * Math.pow(T, 2) + 
-                  3.205e-6 * Math.pow(T, 3) - 7.58e-9 * Math.pow(T, 4);
-    return h_vap;
-}
-
-// 增强因子 'f' (用于真实气体混合物)
-// T (Celsius), P (bara) -> f (dimensionless)
-function getEnhancementFactor(T_celsius, P_bara) {
-    // 这是一个复杂的函数。在 20 bara 以下，f 接近 1。
-    // 在 1 bar, 20C, f ≈ 1.0045
-    // 在 1 bar, 100C, f ≈ 1.002
-    // 在 20 bar, 100C, f ≈ 1.04
-    // 在 20 bar, 200C, f ≈ 1.01
-    // 使用一个简化的经验拟合公式
-    if (T_celsius < 0) T_celsius = 0;
-    const P_Pa = P_bara * 100000;
-    const T_K = T_celsius + 273.15;
-    
-    // (P * (a + bT + cT^2)) + (d + eT + fT^2)
-    const a = -1.6318e-8;
-    const b = 2.1268e-11;
-    const c = -6.1558e-15;
-    const d = 1.0006;
-    const e = 1.579e-4;
-    const f = -1.6387e-6;
-
-    let factor = (P_Pa * (a + b*T_K + c*Math.pow(T_K, 2))) + 
-                 (d + e*T_K + f*Math.pow(T_K, 2));
-
-    if (factor < 0.95) factor = 0.95; // 约束
-    if (factor > 1.15) factor = 1.15; // 约束
-    return factor;
-}
-
-// 压缩因子 'Z' (用于真实气体混合物)
-// T (Celsius), P (bara), W (kg/kg) -> Z (dimensionless)
-function getCompressibilityFactor(T_celsius, P_bara, W_humidityRatio) {
-    // 真实气体定律: PV = Z * R * T
-    // Z = 1 for an ideal gas
-    // 在 20 bara, 100C, Z ≈ 0.98-0.99
-    // 在 20 bara, 300C, Z ≈ 1.0
-    // 在 1 bara, 100C, Z ≈ 0.999
-    // 同样，使用一个简化的经验拟合
-    const T_K = T_celsius + 273.15;
-    const P_Pa = P_bara * 100000;
-
-    // 简化版 Virial an_Equation for Z_mix
-    const B_dry_air = (0.3344 - 364.2 / T_K - 7.58e4 / Math.pow(T_K, 2)) * 1e-5;
-    const B_vapor = (-0.198 - 1928.0 / T_K) * 1e-5;
-    const x_vapor = (W_humidityRatio / (0.62198 + W_humidityRatio));
-    const x_dry_air = 1.0 - x_vapor;
-    
-    // Kay's rule for B_mix
-    const B_mix = x_dry_air * B_dry_air + x_vapor * B_vapor;
-    
-    const Z = 1 + (B_mix * P_Pa) / ((R_AIR_DRY*x_dry_air + R_VAPOR*x_vapor) * T_K);
-    
-    return Z;
-}
-
-// --- END NEW V5.5.0 ---
-
+// 重新导出物理函数供其他部分使用
+const {
+    getSatVaporPressure_HighAccuracy,
+    getDryAirEnthalpy_HighAccuracy,
+    getVaporEnthalpy_HighAccuracy,
+    getEnhancementFactor,
+    getCompressibilityFactor,
+    getSatVaporPressure,
+    getAirDensity,
+    getHumidityRatio,
+    getAirEnthalpy,
+    getDewPoint,
+    getSteamLatentHeat,
+    getVaporPressure
+} = physics;
 
 // V4.0.0: 跟踪参数变化状态
 let isResultStale = false; 
@@ -183,135 +81,6 @@ sinkUnit.addEventListener('change', (e) => {
     handleUnitConversion(document.getElementById('sinkFlow'), oldUnit, newUnit, sinkType.value);
     unitStateCache.sink = newUnit;
 });
-
-// --- MODIFIED V5.5.0: 核心物理函数 ---
-
-// 使用高精度 IAPWS-IF97 饱和蒸汽压 (Pa)
-function getSatVaporPressure(T_celsius) { 
-    return getSatVaporPressure_HighAccuracy(T_celsius); 
-}
-
-// 引入压缩因子 Z 和增强因子 f
-function getAirDensity(P_bara, T_celsius, RH_percent) {
-    const T_kelvin = T_celsius + 273.15;
-    const P_abs = P_bara * 100000; // Pa
-
-    // 必须先计算 W
-    const P_sat = getSatVaporPressure(T_celsius); // Pa (High Accuracy)
-    const f = getEnhancementFactor(T_celsius, P_bara);
-    const P_vapor_sat_real = f * P_sat;
-    
-    let P_vapor = (RH_percent / 100) * P_vapor_sat_real;
-    if (P_vapor >= P_abs) { P_vapor = P_abs * 0.999; }
-    let P_dry_air = P_abs - P_vapor;
-    if (P_dry_air < 0) { P_dry_air = 0; }
-    
-    // 使用高精度分子量比
-    const W = (P_dry_air <= 0) ? 10 : (0.62198 * (P_vapor / P_dry_air)); 
-
-    // PV = Z * R_mix * T
-    // R_mix = (R_dry + W*R_vap) / (1 + W)
-    // rho = P / (Z * R_mix * T)
-    
-    const R_moist_air = (R_AIR_DRY + W * R_VAPOR) / (1 + W); // J/kg·K
-    const Z = getCompressibilityFactor(T_celsius, P_bara, W);
-    
-    if (Z === 0 || R_moist_air === 0 || T_kelvin === 0) {
-        // Fallback to ideal gas if real gas calculation fails
-        const rho_dry_air_ideal = P_dry_air / (R_AIR_DRY * T_kelvin);
-        const rho_vapor_ideal = P_vapor / (R_VAPOR * T_kelvin);
-        return rho_dry_air_ideal + rho_vapor_ideal;
-    }
-
-    return P_abs / (Z * R_moist_air * T_kelvin); // kg/m³
-}
-
-// 引入增强因子 f
-function getHumidityRatio(P_bara, T_celsius, RH_percent) {
-    const P_abs = P_bara * 100000; // Pa
-    const P_sat = getSatVaporPressure(T_celsius); // Pa (High Accuracy)
-    
-    // 引入真实气体增强因子
-    const f = getEnhancementFactor(T_celsius, P_bara);
-    const P_vapor_sat_real = f * P_sat;
-
-    let P_vapor = (RH_percent / 100) * P_vapor_sat_real;
-    if (P_vapor >= P_abs) { P_vapor = P_abs * 0.999; }
-    const P_dry_air = P_abs - P_vapor;
-    if (P_dry_air <= 0) { return 10; } // 纯蒸汽
-    
-    // 使用高精度分子量比 (R_dry / R_vap = 287.058 / 461.52 ≈ 0.62198)
-    return 0.62198 * (P_vapor / P_dry_air); // kg/kg
-}
-
-// 使用高精度焓值函数
-function getAirEnthalpy(T_celsius, W_humidityRatio) {
-    if (isNaN(W_humidityRatio) || W_humidityRatio < 0) W_humidityRatio = 0;
-    
-    const h_dry_air = getDryAirEnthalpy_HighAccuracy(T_celsius);
-    const h_vapor = getVaporEnthalpy_HighAccuracy(T_celsius);
-
-    // h_total = h_dry_air + W * h_vapor (kJ/kg dry air)
-    return h_dry_air + (W_humidityRatio * h_vapor);
-}
-
-// 必须重写，以反解高精度 P_sat 和 f
-// 需要 P_bara 才能计算露点
-function getDewPoint(T_celsius, RH_percent, P_bara) {
-    RH_percent = Math.max(0.1, Math.min(100, RH_percent));
-    
-    // 1. 计算当前的实际水蒸气分压 (P_vapor)
-    const P_sat_in = getSatVaporPressure(T_celsius); // Pa
-    const f_in = getEnhancementFactor(T_celsius, P_bara);
-    const P_vapor = (RH_percent / 100) * f_in * P_sat_in;
-
-    if (P_vapor < 1) return -100; // 极低湿度
-
-    // 2. 找到 T_dew，使得 P_sat_real(T_dew) == P_vapor
-    // P_sat_real(T_dew) = f(T_dew, P_bara) * P_sat(T_dew)
-    // 目标函数: Error(T) = f(T, P_bara) * P_sat(T) - P_vapor
-    
-    let T_low = -100, T_high = T_celsius;
-    let T_guess = T_celsius / 2;
-    
-    // 确保 P_vapor 在 T_high 的饱和压力以下
-    const P_sat_real_high = getEnhancementFactor(T_high, P_bara) * getSatVaporPressure(T_high);
-    if (P_vapor >= P_sat_real_high) return T_celsius; // 已经饱和或过饱和
-
-    // 迭代 10 次 (Bisection method)
-    for (let i = 0; i < 10; i++) {
-        T_guess = (T_low + T_high) / 2;
-        const P_sat_guess = getSatVaporPressure(T_guess);
-        const f_guess = getEnhancementFactor(T_guess, P_bara);
-        const Error_guess = (f_guess * P_sat_guess) - P_vapor;
-        
-        if (Error_guess > 0) {
-            T_high = T_guess; // T_guess 太高了
-        } else {
-            T_low = T_guess; // T_guess 太低了
-        }
-    }
-    
-    return T_guess; // °C
-}
-
-// (此函数保留不变，它用于 sink=steam，独立于空气计算)
-function getSteamLatentHeat(T_celsius) { 
-    if (T_celsius <= 0) return 2501; 
-    if (T_celsius >= 374) return 0; 
-    return Math.max(0, 2501.6 - 2.369*T_celsius + 0.0018*T_celsius*T_celsius - 0.000004*T_celsius*T_celsius*T_celsius); 
-}
-
-// (此函数保留不变)
-function getVaporPressure(P_bara, W_humidityRatio) { 
-    const P_total = P_bara * 100000; 
-    W_humidityRatio = Math.max(0, W_humidityRatio); 
-    // 注意：此处没有使用 f 因子，因为它用于计算 P_sat -> W
-    // 反算 W -> P_vapor 时，理想气体关系 P_v = P_tot * W / (0.622 + W) 仍然是基础
-    // 为保持一致性，应使用 0.62198
-    return (W_humidityRatio * P_total) / (0.62198 + W_humidityRatio); 
-}
-
 
 // --- 辅助函数：UI 更新 (V5.2.1 修正版) ---
 function updateDynamicUI() {
@@ -492,21 +261,30 @@ function handleUnitConversion(inputElement, fromUnit, toUnit, mediaType) {
 // --- 事件监听器 ---
 form.addEventListener('change', updateDynamicUI); 
 
-// (V5.1.1 修正版)
+// (V5.1.1 修正版) - V5.8.0: 添加防抖优化
+let inputDebounceTimer = null;
 form.addEventListener('input', () => {
-    if (!resultsDiv.classList.contains('hidden')) {
-        isResultStale = true;
-        resultMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'opacity-0');
-        resultMessage.classList.add('bg-yellow-100', 'text-yellow-700', 'opacity-100');
-        resultMessage.innerHTML = `<span class="font-bold">注意：</span> 输入参数已更改，请重新计算！`;
-        resultData.classList.add('hidden'); 
-        resultActions.classList.add('hidden');
-        currentInputs = null;
-        currentResult = null;
-        // NEW V5.2.0: Update button style on stale
-        calcButton.classList.remove('bg-[var(--color-action)]', 'hover:bg-orange-800');
-        calcButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'animate-pulse');
+    // 清除之前的定时器
+    if (inputDebounceTimer) {
+        clearTimeout(inputDebounceTimer);
     }
+    
+    // 设置新的定时器（防抖：300ms）
+    inputDebounceTimer = setTimeout(() => {
+        if (!resultsDiv.classList.contains('hidden')) {
+            isResultStale = true;
+            resultMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'opacity-0');
+            resultMessage.classList.add('bg-yellow-100', 'text-yellow-700', 'opacity-100');
+            resultMessage.innerHTML = `<span class="font-bold">注意：</span> 输入参数已更改，请重新计算！`;
+            resultData.classList.add('hidden'); 
+            resultActions.classList.add('hidden');
+            currentInputs = null;
+            currentResult = null;
+            // NEW V5.2.0: Update button style on stale
+            calcButton.classList.remove('bg-[var(--color-action)]', 'hover:bg-orange-800');
+            calcButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'animate-pulse');
+        }
+    }, 300);
 });
 
 // (V5.2.0 修正版)
@@ -1225,7 +1003,7 @@ function generatePrintReport() {
 
 function saveCurrentCase() {
     if (!currentInputs || !currentResult) {
-        alert("没有可暂存的有效计算结果。");
+        showToast("没有可暂存的有效计算结果。", 'warning');
         return;
     }
     const caseData = {
@@ -1237,6 +1015,7 @@ function saveCurrentCase() {
     resultMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'bg-yellow-100', 'text-yellow-700', 'opacity-0');
     resultMessage.classList.add('bg-blue-100', 'text-blue-700', 'opacity-100');
     resultMessage.innerHTML = `<span class="font-bold">方案 ${comparisonCases.length} 已暂存。</span> 可在页面底部查看对比。`;
+    showToast(`方案 ${comparisonCases.length} 已暂存`, 'success');
 }
 
 // (V5.1.2 修正版)
@@ -1300,6 +1079,7 @@ function renderComparisonTable() {
 // (V5.1.3 修正版)
 function clearComparison() {
     const clearAction = () => {
+        const count = comparisonCases.length;
         comparisonCases = [];
         comparisonTableContainer.innerHTML = '';
         comparisonSection.classList.add('hidden');
@@ -1309,6 +1089,9 @@ function clearComparison() {
                 resultMessage.classList.add('hidden');
                 resultMessage.innerHTML = ''; 
             }
+        }
+        if (count > 0) {
+            showToast('所有方案已清空', 'info');
         }
     };
 
@@ -1333,7 +1116,386 @@ function printComparison() {
     }, 500); 
 }
 
+// --- V5.8.0: UI/UX 升级功能 ---
+
+// Toast通知功能
+function showToast(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = {
+        success: '<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+        error: '<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+        warning: '<svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+        info: '<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+    };
+    
+    toast.innerHTML = `
+        ${icons[type] || icons.info}
+        <span class="flex-1 text-sm text-gray-700">${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// 实时表单验证
+function validateField(field) {
+    const value = field.value.trim();
+    const fieldName = field.name;
+    const errorDiv = field.parentElement.nextElementSibling;
+    
+    // 清除之前的错误状态
+    field.classList.remove('error', 'success');
+    if (errorDiv && errorDiv.classList.contains('error-message')) {
+        errorDiv.classList.add('hidden');
+        errorDiv.textContent = '';
+    }
+    
+    // 跳过空值（除非是必填字段）
+    if (!value && !field.required) {
+        return true;
+    }
+    
+    let isValid = true;
+    let errorMsg = '';
+    
+    // 温度字段验证
+    if (fieldName.includes('Temp')) {
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+            isValid = false;
+            errorMsg = '请输入有效数字';
+        } else if (num < -100 || num > 300) {
+            isValid = false;
+            errorMsg = '温度范围：-100°C ~ 300°C';
+        }
+    }
+    
+    // 相对湿度验证
+    if (fieldName.includes('RH')) {
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+            isValid = false;
+            errorMsg = '请输入有效数字';
+        } else if (num < 0 || num > 100) {
+            isValid = false;
+            errorMsg = '相对湿度范围：0% ~ 100%';
+        }
+    }
+    
+    // 压力验证
+    if (fieldName.includes('Pressure')) {
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+            isValid = false;
+            errorMsg = '请输入有效数字';
+        } else if (num < 0.1 || num > 20) {
+            isValid = false;
+            errorMsg = '压力范围：0.1 ~ 20 bara';
+        }
+    }
+    
+    // 流量/负荷验证
+    if (fieldName.includes('Flow') || fieldName.includes('Load')) {
+        const num = parseFloat(value);
+        if (isNaN(num) || num <= 0) {
+            isValid = false;
+            errorMsg = '请输入大于0的有效数字';
+        }
+    }
+    
+    // 更新UI状态
+    if (isValid && value) {
+        field.classList.add('success');
+    } else if (!isValid) {
+        field.classList.add('error');
+        if (errorDiv && errorDiv.classList.contains('error-message')) {
+            errorDiv.textContent = errorMsg;
+            errorDiv.classList.remove('hidden');
+        }
+    }
+    
+    return isValid;
+}
+
+// 添加实时验证监听器（使用防抖优化）
+function setupFieldValidation() {
+    const inputs = form.querySelectorAll('input[type="number"], input[type="text"], textarea');
+    const validationTimers = new Map();
+    
+    inputs.forEach(input => {
+        // blur事件立即验证
+        input.addEventListener('blur', () => validateField(input));
+        
+        // input事件使用防抖（延迟验证）
+        input.addEventListener('input', () => {
+            // 清除错误状态当用户开始输入时
+            if (input.classList.contains('error')) {
+                input.classList.remove('error');
+                const errorDiv = input.parentElement.nextElementSibling;
+                if (errorDiv && errorDiv.classList.contains('error-message')) {
+                    errorDiv.classList.add('hidden');
+                }
+            }
+            
+            // 防抖验证（500ms后验证）
+            if (validationTimers.has(input)) {
+                clearTimeout(validationTimers.get(input));
+            }
+            
+            const timer = setTimeout(() => {
+                if (document.activeElement !== input) {
+                    validateField(input);
+                }
+            }, 500);
+            
+            validationTimers.set(input, timer);
+        });
+    });
+}
+
+// 键盘快捷键
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Enter键 - 计算
+        if (e.key === 'Enter' && !e.target.matches('textarea, input[type="text"]')) {
+            e.preventDefault();
+            if (!calcButton.disabled) {
+                calcButton.click();
+            }
+        }
+        
+        // Esc键 - 重置
+        if (e.key === 'Escape') {
+            resetButton.click();
+        }
+    });
+}
+
+// 示例数据填充
+function fillExampleData() {
+    document.getElementById('projectName').value = '示例项目';
+    document.getElementById('projectDesc').value = '这是一个示例项目，用于演示计算器的功能';
+    document.getElementById('mode_source').checked = true;
+    document.getElementById('type_flow').checked = true;
+    document.getElementById('sourceType').value = 'water';
+    document.getElementById('sourceTempIn').value = '30';
+    document.getElementById('sourceTempOut').value = '25';
+    document.getElementById('sourceFlow').value = '100';
+    document.getElementById('sourceUnit').value = 't/h';
+    document.getElementById('sinkType').value = 'water';
+    document.getElementById('sinkTempIn').value = '50';
+    document.getElementById('sinkTempOut').value = '70';
+    document.getElementById('etaType').value = '0.55';
+    
+    updateDynamicUI();
+    showToast('示例数据已填充', 'success');
+}
+
+// 加载状态管理
+function setLoadingState(isLoading) {
+    const spinner = document.getElementById('calcLoadingSpinner');
+    const buttonText = calcButton.querySelector('span');
+    
+    if (isLoading) {
+        calcButton.disabled = true;
+        spinner.classList.remove('hidden');
+        buttonText.textContent = '计算中...';
+    } else {
+        calcButton.disabled = false;
+        spinner.classList.add('hidden');
+        buttonText.textContent = '开始计算';
+    }
+}
+
+// 结果可视化（简单图表）- 使用requestAnimationFrame优化
+function renderResultCharts(result) {
+    const chartsDiv = document.getElementById('resultCharts');
+    if (!chartsDiv || !result.feasibility) return;
+    
+    chartsDiv.classList.remove('hidden');
+    
+    // 使用requestAnimationFrame延迟渲染，避免阻塞主线程
+    requestAnimationFrame(() => {
+        // 能量分布饼图（使用Canvas简单绘制）
+        const energyCanvas = document.getElementById('energyChartCanvas');
+        if (energyCanvas) {
+            const ctx = energyCanvas.getContext('2d');
+            const width = energyCanvas.width = energyCanvas.offsetWidth || 300;
+            const height = energyCanvas.height = energyCanvas.offsetHeight || 200;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) / 2 - 10;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const qHot = result.qHot_kW || 0;
+            const w = result.W_kW || 0;
+            const total = qHot + w;
+            
+            if (total > 0) {
+                const hotAngle = (qHot / total) * 2 * Math.PI;
+                
+                // 绘制制热量（红色）
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, 0, hotAngle);
+                ctx.closePath();
+                ctx.fillStyle = '#dc2626';
+                ctx.fill();
+                
+                // 绘制功耗（黄色）
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, hotAngle, 2 * Math.PI);
+                ctx.closePath();
+                ctx.fillStyle = '#f59e0b';
+                ctx.fill();
+                
+                // 添加标签
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Q_hot: ${qHot.toFixed(1)}kW`, centerX, centerY - 10);
+                ctx.fillText(`W: ${w.toFixed(1)}kW`, centerX, centerY + 10);
+            }
+        }
+        
+        // 温度变化条形图
+        const tempCanvas = document.getElementById('tempChartCanvas');
+        if (tempCanvas && currentInputs) {
+            const ctx = tempCanvas.getContext('2d');
+            const width = tempCanvas.width = tempCanvas.offsetWidth || 300;
+            const height = tempCanvas.height = tempCanvas.offsetHeight || 200;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const sourceIn = currentInputs.source.tempIn || 0;
+            const sourceOut = currentInputs.source.tempOut || 0;
+            const sinkIn = currentInputs.sink.tempIn || 0;
+            const sinkOut = currentInputs.sink.tempOut || 0;
+            const maxTemp = Math.max(sourceIn, sourceOut, sinkIn, sinkOut, 100);
+            const barWidth = width / 4 - 10;
+            const maxHeight = height - 40;
+            
+            // 热源进口
+            const h1 = (sourceIn / maxTemp) * maxHeight;
+            ctx.fillStyle = '#2563eb';
+            ctx.fillRect(10, height - h1 - 20, barWidth, h1);
+            ctx.fillStyle = '#000';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('源入', 10 + barWidth/2 - 10, height - 5);
+            ctx.fillText(sourceIn.toFixed(1) + '°C', 10 + barWidth/2 - 15, height - h1 - 25);
+            
+            // 热源出口
+            const h2 = (sourceOut / maxTemp) * maxHeight;
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(20 + barWidth, height - h2 - 20, barWidth, h2);
+            ctx.fillStyle = '#000';
+            ctx.fillText('源出', 20 + barWidth + barWidth/2 - 10, height - 5);
+            ctx.fillText(sourceOut.toFixed(1) + '°C', 20 + barWidth + barWidth/2 - 15, height - h2 - 25);
+            
+            // 热汇进口
+            const h3 = (sinkIn / maxTemp) * maxHeight;
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(30 + barWidth * 2, height - h3 - 20, barWidth, h3);
+            ctx.fillStyle = '#000';
+            ctx.fillText('汇入', 30 + barWidth * 2 + barWidth/2 - 10, height - 5);
+            ctx.fillText(sinkIn.toFixed(1) + '°C', 30 + barWidth * 2 + barWidth/2 - 15, height - h3 - 25);
+            
+            // 热汇出口
+            const h4 = (sinkOut / maxTemp) * maxHeight;
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(40 + barWidth * 3, height - h4 - 20, barWidth, h4);
+            ctx.fillStyle = '#000';
+            ctx.fillText('汇出', 40 + barWidth * 3 + barWidth/2 - 10, height - 5);
+            ctx.fillText(sinkOut.toFixed(1) + '°C', 40 + barWidth * 3 + barWidth/2 - 15, height - h4 - 25);
+        }
+    });
+}
+
+// 更新进度条
+function updateProgressBars(result) {
+    if (!result.feasibility) return;
+    
+    // COP进度条
+    const copBar = document.querySelector('#copProgressBar > div');
+    const copBarContainer = document.getElementById('copProgressBar');
+    if (copBar && result.copActual && result.copCarnotMax) {
+        const copPercent = Math.min((result.copActual / result.copCarnotMax) * 100, 100);
+        copBar.style.width = copPercent + '%';
+        copBarContainer.classList.remove('hidden');
+    }
+    
+    // η进度条
+    const etaBar = document.querySelector('#etaProgressBar > div');
+    const etaBarContainer = document.getElementById('etaProgressBar');
+    if (etaBar && result.etaActual) {
+        const etaPercent = result.etaActual * 100;
+        etaBar.style.width = etaPercent + '%';
+        etaBarContainer.classList.remove('hidden');
+    }
+}
+
+// 修改displayResults函数以包含新功能
+const originalDisplayResults = displayResults;
+displayResults = function(data) {
+    originalDisplayResults(data);
+    
+    if (data.feasibility) {
+        // 显示Toast通知
+        showToast('计算完成！', 'success');
+        
+        // 渲染图表
+        setTimeout(() => {
+            renderResultCharts(data);
+            updateProgressBars(data);
+        }, 100);
+        
+        // 滚动到结果区域
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+};
+
+// 修改performCalculation函数以添加加载状态
+const originalPerformCalculation = performCalculation;
+performCalculation = function() {
+    setLoadingState(true);
+    
+    setTimeout(() => {
+        try {
+            originalPerformCalculation();
+        } catch (e) {
+            showToast('计算失败：' + e.message, 'error');
+        } finally {
+            setLoadingState(false);
+        }
+    }, 100);
+};
+
+// 绑定示例数据按钮
+const fillExampleButton = document.getElementById('fillExampleButton');
+if (fillExampleButton) {
+    fillExampleButton.addEventListener('click', fillExampleData);
+}
+
 // --- Initialization ---
-updateDynamicUI(); 
+updateDynamicUI();
+setupFieldValidation();
+setupKeyboardShortcuts();
+
 // 更新版本号
-console.log("工业热泵匹配计算器 V5.7.0 (加湿/除湿修正版) 初始化完成。");
+console.log("工业热泵匹配计算器 V5.8.0 (UI/UX升级版) 初始化完成。");
