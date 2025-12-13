@@ -15,7 +15,11 @@ const {
     getAirEnthalpy,
     getDewPoint,
     getSteamLatentHeat,
-    getVaporPressure
+    getVaporPressure,
+    getSaturatedSteamEnthalpy,
+    getIsentropicOutletEnthalpy,
+    getSaturationTempFromPressure,
+    getSteamTempFromEnthalpy
 } = physics;
 
 // V4.0.0: 跟踪参数变化状态
@@ -38,9 +42,11 @@ const inputTypeRadios = document.querySelectorAll('input[name="inputType"]');
 const sourceType = document.getElementById('sourceType');
 const sinkType = document.getElementById('sinkType');
 const sourceAirParams = document.getElementById('sourceAirParams');
+const sourceSteamParams = document.getElementById('sourceSteamParams');
 const sinkAirParams = document.getElementById('sinkAirParams');
 const sinkTempGroup = document.getElementById('sinkTempGroup');
 const sinkSteamParams = document.getElementById('sinkSteamParams');
+const mvrModeBanner = document.getElementById('mvrModeBanner');
 const etaType = document.getElementById('etaType');
 const customEtaGroup = document.getElementById('customEtaGroup');
 const customCopGroup = document.getElementById('customCopGroup');
@@ -54,6 +60,7 @@ const sinkAirHumidPotGroup = document.getElementById('sinkAirHumidPotGroup');
 const sinkAirRHOutGroup = document.getElementById('sinkAirRHOutGroup');
 const sinkEnergyEvapCapGroup = document.getElementById('sinkEnergyEvapCapGroup');
 const sinkRHAfterHumidGroup = document.getElementById('sinkRHAfterHumidGroup');
+const sinkSteamMakeupWaterGroup = document.getElementById('sinkSteamMakeupWaterGroup');
 const sourceUnit = document.getElementById('sourceUnit');
 const sinkUnit = document.getElementById('sinkUnit');
 
@@ -82,12 +89,12 @@ sinkUnit.addEventListener('change', (e) => {
     unitStateCache.sink = newUnit;
 });
 
-// --- 辅助函数：UI 更新 (V5.2.1 修正版) ---
+// --- 辅助函数：UI 更新 (V6.0.0 MVR支持) ---
 function updateDynamicUI() {
     const mode = document.querySelector('input[name="calcMode"]:checked').value;
     const inputType = document.querySelector('input[name="inputType"]:checked').value;
     const sType = sourceType.value;
-    const dType = sinkType.value;
+    let dType = sinkType.value;
     
     // 根据模式动态添加/移除 body 类
     if (mode === 'source') {
@@ -96,17 +103,74 @@ function updateDynamicUI() {
         document.body.classList.remove('mode-source-active');
     }
     
+    // MVR模式：当热源为蒸汽时，自动设置热汇为蒸汽
+    if (sType === 'steam') {
+        // 自动将热汇设置为蒸汽
+        if (dType !== 'steam') {
+            sinkType.value = 'steam';
+            dType = 'steam';
+            // 不触发change事件，避免递归调用updateDynamicUI
+            // 直接在这里更新UI状态即可
+        }
+        
+        // 禁用热汇的其他选项（水、空气）
+        const sinkWaterOption = sinkType.querySelector('option[value="water"]');
+        const sinkAirOption = sinkType.querySelector('option[value="air"]');
+        if (sinkWaterOption) sinkWaterOption.disabled = true;
+        if (sinkAirOption) sinkAirOption.disabled = true;
+    } else {
+        // 恢复热汇的所有选项
+        const sinkWaterOption = sinkType.querySelector('option[value="water"]');
+        const sinkAirOption = sinkType.querySelector('option[value="air"]');
+        if (sinkWaterOption) sinkWaterOption.disabled = false;
+        if (sinkAirOption) sinkAirOption.disabled = false;
+    }
+    
+    // MVR模式检测
+    const isMVRMode = sType === 'steam' && dType === 'steam';
+    if (mvrModeBanner) {
+        mvrModeBanner.classList.toggle('hidden', !isMVRMode);
+    }
+    
+    // 重新获取dType（可能在上面被更新了）
+    dType = sinkType.value;
+    
     // Handle media-specific params
     sourceAirParams.classList.toggle('hidden', sType !== 'air');
+    sourceSteamParams.classList.toggle('hidden', sType !== 'steam');
     sinkAirParams.classList.toggle('hidden', dType !== 'air');
     sinkTempGroup.classList.toggle('hidden', dType === 'steam');
     sinkSteamParams.classList.toggle('hidden', dType !== 'steam');
     
     // Handle dynamic input groups (4 combinations)
+    // MVR模式下，热源和热汇都需要流量/负荷输入
+    if (isMVRMode) {
+        // MVR模式：显示热源流量/负荷输入
     sourceFlowGroup.classList.toggle('hidden', !(mode === 'source' && inputType === 'flow'));
     sourceLoadGroup.classList.toggle('hidden', !(mode === 'source' && inputType === 'load'));
+        // MVR模式：热汇也需要流量/负荷输入（如果模式是sink）
     sinkFlowGroup.classList.toggle('hidden', !(mode === 'sink' && inputType === 'flow'));
     sinkLoadGroup.classList.toggle('hidden', !(mode === 'sink' && inputType === 'load'));
+    } else {
+        // 常规模式
+        sourceFlowGroup.classList.toggle('hidden', !(mode === 'source' && inputType === 'flow'));
+        sourceLoadGroup.classList.toggle('hidden', !(mode === 'source' && inputType === 'load'));
+        sinkFlowGroup.classList.toggle('hidden', !(mode === 'sink' && inputType === 'flow'));
+        sinkLoadGroup.classList.toggle('hidden', !(mode === 'sink' && inputType === 'load'));
+    }
+    
+    // MVR模式下隐藏常规温度输入组
+    if (isMVRMode) {
+        const sourceTempGroup = document.querySelector('fieldset:has(legend.text-source) .grid.grid-cols-1.sm\\:grid-cols-2');
+        if (sourceTempGroup) {
+            sourceTempGroup.style.display = 'none';
+        }
+    } else {
+        const sourceTempGroup = document.querySelector('fieldset:has(legend.text-source) .grid.grid-cols-1.sm\\:grid-cols-2');
+        if (sourceTempGroup) {
+            sourceTempGroup.style.display = '';
+        }
+    }
 
     // Unit management logic
     if (sType === 'water') {
@@ -165,7 +229,7 @@ function showMessage(message, isError = true, warnings = []) {
 }
 
 function clearResultFields() {
-    const fields = ['resFeasibility', 'resSourceSensible', 'resSourceLatent', 'resSourceWater', 'resSinkParam1Value', 'resSinkParam2Value', 'resSinkParam3Value', 'resSinkAirHumidPot', 'resSinkAirRHOut', 'resSinkEnergyEvapCap', 'resSinkRHAfterHumid', 'resQcold', 'resQhot', 'resW', 'resSourceFlow', 'resSinkFlow', 'resCopActual', 'resCopCarnot', 'resEta'];
+    const fields = ['resFeasibility', 'resSourceSensible', 'resSourceLatent', 'resSourceWater', 'resSinkParam1Value', 'resSinkParam2Value', 'resSinkParam3Value', 'resSinkAirHumidPot', 'resSinkAirRHOut', 'resSinkEnergyEvapCap', 'resSinkRHAfterHumid', 'resSinkSteamMakeupWater', 'resQcold', 'resQhot', 'resW', 'resSourceFlow', 'resSinkFlow', 'resCopActual', 'resCopCarnot', 'resEta'];
     fields.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '---'; });
     const feasibilityEl = document.getElementById('resFeasibility');
     if(feasibilityEl) feasibilityEl.className = 'font-bold text-lg text-gray-700';
@@ -175,6 +239,7 @@ function clearResultFields() {
     if (sinkAirRHOutGroup) sinkAirRHOutGroup.classList.add('hidden');
     if (sinkEnergyEvapCapGroup) sinkEnergyEvapCapGroup.classList.add('hidden');
     if (sinkRHAfterHumidGroup) sinkRHAfterHumidGroup.classList.add('hidden');
+    if (sinkSteamMakeupWaterGroup) sinkSteamMakeupWaterGroup.classList.add('hidden');
 }
 
 // [V5.4.0] 替换此函数
@@ -202,10 +267,12 @@ function displayResults(data) {
     
     sinkResultGroup.classList.toggle('hidden', data.sink.type !== 'air' && data.sink.type !== 'steam');
     const isAirSink = data.sink.type === 'air';
+    const isSteamSink = data.sink.type === 'steam';
     sinkAirHumidPotGroup.classList.toggle('hidden', !isAirSink);
     sinkAirRHOutGroup.classList.toggle('hidden', !isAirSink);
     sinkEnergyEvapCapGroup.classList.toggle('hidden', !isAirSink); 
     sinkRHAfterHumidGroup.classList.toggle('hidden', !isAirSink);
+    sinkSteamMakeupWaterGroup.classList.toggle('hidden', !isSteamSink);
     
     if (isAirSink) {
         document.getElementById('resSinkParam1Label').textContent = '显热负荷 (Q_sens)：';
@@ -229,6 +296,23 @@ function displayResults(data) {
         document.getElementById('resSinkParam2Value').textContent = kw(data.sink.qSensible);
         document.getElementById('resSinkParam3Label').textContent = '潜热负荷 (Q_lat)：';
         document.getElementById('resSinkParam3Value').textContent = kw(data.sink.qLatent);
+        // 补水量计算
+        // 对于MVR模式：补水量 = 热汇流量 - 热源流量
+        // 对于常规模式：补水量 = 热汇流量（因为热汇需要生成蒸汽）
+        let makeupWaterFlow = null;
+        if (data.isMVRMode && data.makeupWaterFlow_t_h !== undefined) {
+            // MVR模式：补水量 = 热汇流量 - 热源流量
+            makeupWaterFlow = data.makeupWaterFlow_t_h;
+        } else if (data.flow && data.flow.sinkFlow !== null) {
+            // 常规模式：补水量等于热汇流量（因为热汇需要生成蒸汽）
+            makeupWaterFlow = data.flow.sinkFlow;
+        }
+        const makeupWaterUnit = 't/h';
+        if (makeupWaterFlow !== null && !isNaN(makeupWaterFlow)) {
+            document.getElementById('resSinkSteamMakeupWater').textContent = `${num(makeupWaterFlow, 3)} ${makeupWaterUnit}`;
+        } else {
+            document.getElementById('resSinkSteamMakeupWater').textContent = '---';
+        }
     }
     
     document.getElementById('resQcold').textContent = kw(data.qCold_kW);
@@ -352,7 +436,72 @@ function performCalculation() {
     try {
         const formData = new FormData(form);
         const raw = Object.fromEntries(formData.entries());
+        console.log("Form data:", raw);
         const inputs = parseAndValidateInputs(raw);
+        console.log("Parsed inputs:", inputs);
+        
+        // MVR模式特殊处理
+        if (inputs.isMVRMode) {
+            console.log("MVR mode detected, starting calculation...");
+            // MVR模式下，根据mode来获取流量/负荷
+            let sourceResult, sinkResult;
+            if (inputs.mode === 'source') {
+                // 已知热源算热汇
+                sourceResult = (inputs.inputType === 'flow') 
+                    ? calculateLoad(inputs.source, true, true) 
+                    : { type: inputs.source.type, q_kW: inputs.source.load || NaN, qSensible: NaN, qLatent: NaN, water_kg_h: 0 };
+                sinkResult = { 
+                    type: inputs.sink.type, 
+                    steamTemp: inputs.sink.steamTemp, 
+                    q_kW: NaN, 
+                    qSensible: NaN, 
+                    qLatent: NaN, 
+                    water_kg_h: 0 
+                };
+            } else {
+                // 已知热汇算热源
+                sinkResult = (inputs.inputType === 'flow') 
+                    ? calculateLoad(inputs.sink, true, false) 
+                    : { type: inputs.sink.type, steamTemp: inputs.sink.steamTemp, q_kW: inputs.sink.load || NaN, qSensible: NaN, qLatent: NaN, water_kg_h: 0 };
+                sourceResult = { 
+                    type: inputs.source.type, 
+                    steamTemp: inputs.source.steamTemp, 
+                    q_kW: NaN, 
+                    qSensible: NaN, 
+                    qLatent: NaN, 
+                    water_kg_h: 0 
+                };
+            }
+            
+            // 计算MVR参数
+            const mvrResult = calculateMVR(inputs, sourceResult, sinkResult);
+            
+            // 构建MVR结果对象
+            const finalResult = {
+                ...mvrResult,
+                isMVRMode: true,
+                feasibility: mvrResult.mvrCOP > 0 ? '可行' : '不可行',
+                qCold_kW: mvrResult.Q_cold_kW,
+                qHot_kW: mvrResult.Q_hot_kW,
+                W_kW: mvrResult.compressionWork_kW,
+                copActual: mvrResult.mvrCOP,
+                copCarnotMax: mvrResult.copCarnotMax,
+                etaActual: mvrResult.etaActual,
+                source: { type: 'steam', steamTemp: inputs.source.steamTemp },
+                sink: { type: 'steam', steamTemp: inputs.sink.steamTemp },
+                flow: {
+                    sourceFlow: mvrResult.steamFlow_t_h,
+                    sourceUnit: inputs.source.unit || 't/h',
+                    sinkFlow: mvrResult.sinkSteamFlow_t_h,
+                    sinkUnit: inputs.source.unit || 't/h'
+                }
+            };
+            
+            currentInputs = inputs;
+            currentResult = finalResult;
+            displayResults(finalResult);
+        } else {
+            // 常规热泵计算
         const sourceResult = (inputs.mode === 'source' && inputs.inputType === 'flow') 
             ? calculateLoad(inputs.source, true, true) 
             : { type: inputs.source.type, q_kW: NaN, qSensible: NaN, qLatent: NaN, water_kg_h: 0 };
@@ -363,9 +512,19 @@ function performCalculation() {
         currentInputs = inputs;
         currentResult = finalResult;
         displayResults(finalResult);
+        }
     } catch (e) {
         console.error("Calculation Error:", e);
-        showMessage(e.message || '发生未知计算错误，请检查输入参数。');
+        console.error("Error details:", {
+            message: e.message,
+            stack: e.stack,
+            inputs: inputs
+        });
+        const errorMsg = e.message || '发生未知计算错误，请检查输入参数。';
+        showMessage(errorMsg, false);
+        showToast('计算失败：' + errorMsg, 'error');
+        // 重新抛出错误以便外层捕获
+        throw e;
     }
 }
 
@@ -396,16 +555,29 @@ function parseAndValidateInputs(p) {
     // --- V5.7.0 END ---
 
     inputs.source.type = p.sourceType;
+    
+    // MVR模式检测
+    const isMVRMode = inputs.source.type === 'steam' && p.sinkType === 'steam';
+    inputs.isMVRMode = isMVRMode;
+    
+    if (inputs.source.type === 'steam') {
+        // 热源蒸汽参数
+        inputs.source.steamTemp = parseFloatStrict(p.sourceSteamTemp, "热源·饱和蒸汽温度", true, 1, 250);
+        inputs.source.steamPressure = parseFloatOptional(p.sourceSteamPressure, "热源·蒸汽压力", 0.001, 100);
+    } else {
     inputs.source.tempIn = parseFloatStrict(p.sourceTempIn, "热源·进口温度", true, -100, 300);
     inputs.source.tempOut = parseFloatStrict(p.sourceTempOut, "热源·出口温度", true, -100, 300);
     if (!isNaN(inputs.source.tempIn) && !isNaN(inputs.source.tempOut) && inputs.source.tempIn <= inputs.source.tempOut) errors.push("热源：进口温度必须高于出口温度。");
+    }
     
-    if (inputs.mode === 'source') {
+    // 常规模式下，根据mode收集流量/负荷
+    if (!isMVRMode && inputs.mode === 'source') {
         if (inputs.inputType === 'flow') {
             inputs.source.flow = parseFloatStrict(p.sourceFlow, "热源·可用流量");
             inputs.source.unit = p.sourceUnit;
         } else { inputs.source.load = parseFloatStrict(p.sourceLoad, "热源·可用负荷"); }
     }
+    // MVR模式下的流量/负荷收集在下面统一处理
     
     if (inputs.source.type === 'air') {
         inputs.source.pressure = parseFloatStrict(p.sourceAirPressure, "热源·空气压力", true, 0.1, 20);
@@ -469,11 +641,52 @@ function parseAndValidateInputs(p) {
         }
     }
     
+    // MVR模式下的流量/负荷收集
+    if (isMVRMode) {
+        if (inputs.mode === 'source') {
+            // 已知热源算热汇
+            if (inputs.inputType === 'flow') {
+                inputs.source.flow = parseFloatStrict(p.sourceFlow, "热源·蒸汽流量");
+                inputs.source.unit = p.sourceUnit;
+            } else {
+                inputs.source.load = parseFloatStrict(p.sourceLoad, "热源·可用负荷");
+            }
+        } else {
+            // 已知热汇算热源
+            if (inputs.inputType === 'flow') {
+                inputs.sink.flow = parseFloatStrict(p.sinkFlow, "热汇·需求流量");
+                inputs.sink.unit = p.sinkUnit;
+            } else {
+                inputs.sink.load = parseFloatStrict(p.sinkLoad, "热汇·需求负荷");
+            }
+        }
+    } else {
+        // 常规模式：根据mode收集对应的流量/负荷
     if (inputs.mode === 'sink') {
         if (inputs.inputType === 'flow') {
             inputs.sink.flow = parseFloatStrict(p.sinkFlow, "热汇·需求流量");
             inputs.sink.unit = p.sinkUnit;
         } else { inputs.sink.load = parseFloatStrict(p.sinkLoad, "热汇·需求负荷"); }
+        }
+    }
+    
+    // MVR模式验证（在sink参数收集后）
+    if (isMVRMode) {
+        if (!isNaN(inputs.source.steamTemp) && !isNaN(inputs.sink.steamTemp) && inputs.source.steamTemp >= inputs.sink.steamTemp) {
+            errors.push("MVR模式：热源蒸汽温度必须低于热汇蒸汽温度。");
+        }
+        // 验证压缩比合理性
+        if (!isNaN(inputs.source.steamTemp) && !isNaN(inputs.sink.steamTemp)) {
+            const P_source = inputs.source.steamPressure ? inputs.source.steamPressure : (getSatVaporPressure(inputs.source.steamTemp) / 100000);
+            const P_sink = getSatVaporPressure(inputs.sink.steamTemp) / 100000;
+            const compressionRatio = P_sink / P_source;
+            if (compressionRatio < 1.1) {
+                warnings.push(`MVR模式：压缩比 ${compressionRatio.toFixed(2)} 过低，建议压缩比 ≥ 1.1。`);
+            }
+            if (compressionRatio > 10) {
+                warnings.push(`MVR模式：压缩比 ${compressionRatio.toFixed(2)} 过高，实际应用中压缩比通常 ≤ 10。`);
+            }
+        }
     }
     
     inputs.eta.type = p.etaType;
@@ -481,7 +694,8 @@ function parseAndValidateInputs(p) {
     else if (inputs.eta.type === 'custom_cop') inputs.eta.customCop = parseFloatStrict(p.customCop, "自定义 COP", false, 1.01);
     else inputs.eta.customEta = parseFloat(inputs.eta.type);
     
-    const T_cold_out = inputs.source.tempOut;
+    // MVR模式下使用蒸汽温度，否则使用常规温度
+    const T_cold_out = isMVRMode ? inputs.source.steamTemp : inputs.source.tempOut;
     const T_hot_in = (inputs.sink.type === 'steam') ? inputs.sink.steamTemp : inputs.sink.tempIn;
     
     inputs.warnings = warnings; 
@@ -550,12 +764,17 @@ function calculateFlowFromLoad(params, q_kW, isSource) {
         
         return { flow: flow_m3_h, unit: "m³/h" };
     }
-    else if (params.type === 'steam' && !isSource) { 
-        // (此部分不变，不涉及空气)
+    else if (params.type === 'steam') {
+        // 支持热源和热汇蒸汽
         const h_latent = getSteamLatentHeat(params.steamTemp);
-        const h_sensible = CP_WATER * (params.steamTemp - params.makeupTemp);
-        const delta_h_total = h_latent + h_sensible;
-        if (delta_h_total <= 0) throw new Error("热汇蒸汽总焓升必须大于0。");
+        const h_sensible = isSource 
+            ? CP_WATER * (params.steamTemp - (params.makeupTemp || 20)) // 热源：假设冷凝到20°C
+            : CP_WATER * (params.steamTemp - params.makeupTemp); // 热汇：使用补水温度
+        const delta_h_total = isSource 
+            ? h_latent + h_sensible // 热源：释放潜热和显热
+            : h_latent + h_sensible; // 热汇：吸收潜热和显热
+        
+        if (delta_h_total <= 0) throw new Error(`${isSource ? '热源' : '热汇'}蒸汽总焓变必须大于0。`);
         const mass_kg_s = q_kW / delta_h_total;
         const flow_t_h = mass_kg_s * 3600 / 1000;
         return { flow: flow_t_h, unit: "t/h" };
@@ -662,17 +881,28 @@ function calculateLoad(params, hasKnownFlow, isSource) {
                  // result.qSensible = result.q_kW; result.qLatent = 0; result.water_kg_h = 0;
             }
         }
-    } else if (params.type === 'steam' && !isSource) { 
-        // (此部分不变，不涉及空气)
+    } else if (params.type === 'steam') {
+        // 支持热源和热汇蒸汽
         const h_latent = getSteamLatentHeat(params.steamTemp);
-        const h_sensible = CP_WATER * (params.steamTemp - params.makeupTemp);
-        const delta_h_total = h_latent + h_sensible;
+        const h_sensible = isSource 
+            ? CP_WATER * (params.steamTemp - (params.makeupTemp || 20)) // 热源：假设冷凝到20°C
+            : CP_WATER * (params.steamTemp - params.makeupTemp); // 热汇：使用补水温度
+        const delta_h_total = isSource 
+            ? h_latent + h_sensible // 热源：释放潜热和显热
+            : h_latent + h_sensible; // 热汇：吸收潜热和显热
+        
         if (hasKnownFlow) {
             let mass_moist_kg_s;
             if (unit === 't/h') { mass_moist_kg_s = flow * 1000 / 3600; } 
             else if (unit === 'L/min') { mass_moist_kg_s = flow / 60; } 
-            else if (unit === 'm3/h') { mass_moist_kg_s = flow * 1000 / 3600; } 
-            else { throw new Error(`热汇·蒸汽介质的流量单位无效: ${unit}。`); }
+            else if (unit === 'm3/h') { 
+                // 蒸汽体积流量转质量流量（需要压力）
+                const P_Pa = params.steamPressure ? params.steamPressure * 100000 : getSatVaporPressure(params.steamTemp);
+                const R_VAPOR_J = 461.52;
+                const rho_kg_m3 = P_Pa / (R_VAPOR_J * (params.steamTemp + 273.15));
+                mass_moist_kg_s = flow * rho_kg_m3 / 3600;
+            } 
+            else { throw new Error(`${isSource ? '热源' : '热汇'}·蒸汽介质的流量单位无效: ${unit}。`); }
             
             result.mass_dry_air_kg_s = mass_moist_kg_s; // 蒸汽=纯水
             result.q_kW = result.mass_dry_air_kg_s * delta_h_total;
@@ -979,6 +1209,7 @@ function generatePrintReport() {
                             <div><dt>饱和压力：</dt><dd>${num(getSatVaporPressure(i.sink.steamTemp) / 100000, 3)} bara</dd></div>
                             <div><dt>显热负荷 (Q_sens)：</dt><dd>${kw(r.sink.qSensible)}</dd></div>
                             <div><dt>潜热负荷 (Q_lat)：</dt><dd>${kw(r.sink.qLatent)}</dd></div>
+                            <div><dt>补水量：</dt><dd>${r.flow.sinkFlow !== null ? `${num(r.flow.sinkFlow)} ${r.flow.sinkUnit || 't/h'}` : '---'}</dd></div>
                         ` : (i.sink.type === 'air' ? `
                             <div><dt>显热负荷 (Q_sens)：</dt><dd>${kw(r.sink.qSensible)}</dd></div>
                             <div><dt>潜热负荷 (Q_lat)：</dt><dd>${kw(r.sink.qLatent)}</dd></div>
@@ -1321,110 +1552,491 @@ function setLoadingState(isLoading) {
     }
 }
 
-// 结果可视化（简单图表）- 使用requestAnimationFrame优化
-function renderResultCharts(result) {
-    const chartsDiv = document.getElementById('resultCharts');
-    if (!chartsDiv || !result.feasibility) return;
+// MVR计算函数（考虑等熵效率）
+function calculateMVR(inputs, sourceResult, sinkResult) {
+    const R_VAPOR_J = 461.52; // J/kg·K (水蒸气气体常数)
+    const GAMMA = 1.33; // 水蒸气比热比
+    // 使用用户输入的eta作为等熵效率（热力完善度在MVR系统中可近似看作等熵效率）
+    // 如果用户输入了自定义COP，则先转换为eta
+    let userEta;
+    if (inputs.eta.type === 'custom_cop') {
+        // 需要先计算copCarnotMax，但此时还未计算，所以先使用临时值
+        // 将在后面重新计算
+        const T_cond_K_temp = inputs.sink.steamTemp + 273.15;
+        const T_evap_K_temp = inputs.source.steamTemp + 273.15;
+        const tempDiff_temp = T_cond_K_temp - T_evap_K_temp;
+        const copCarnotMax_temp = T_cond_K_temp / tempDiff_temp;
+        userEta = inputs.eta.customCop / copCarnotMax_temp;
+    } else {
+        userEta = inputs.eta.customEta;
+    }
+    const ETA_ISENTROPIC = userEta; // 使用用户输入的eta作为等熵效率
+    const ETA_MECHANICAL = 0.90; // 机械效率（默认值）
     
-    chartsDiv.classList.remove('hidden');
+    // 验证输入参数
+    if (!inputs.source.steamTemp || isNaN(inputs.source.steamTemp)) {
+        throw new Error("MVR模式：热源蒸汽温度无效。");
+    }
+    if (!inputs.sink.steamTemp || isNaN(inputs.sink.steamTemp)) {
+        throw new Error("MVR模式：热汇蒸汽温度无效。");
+    }
+    if (!inputs.sink.makeupTemp || isNaN(inputs.sink.makeupTemp)) {
+        throw new Error("MVR模式：热汇补水温度无效。");
+    }
     
-    // 使用requestAnimationFrame延迟渲染，避免阻塞主线程
-    requestAnimationFrame(() => {
-        // 能量分布饼图（使用Canvas简单绘制）
-        const energyCanvas = document.getElementById('energyChartCanvas');
-        if (energyCanvas) {
-            const ctx = energyCanvas.getContext('2d');
-            const width = energyCanvas.width = energyCanvas.offsetWidth || 300;
-            const height = energyCanvas.height = energyCanvas.offsetHeight || 200;
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const radius = Math.min(width, height) / 2 - 10;
-            
-            ctx.clearRect(0, 0, width, height);
-            
-            const qHot = result.qHot_kW || 0;
-            const w = result.W_kW || 0;
-            const total = qHot + w;
-            
-            if (total > 0) {
-                const hotAngle = (qHot / total) * 2 * Math.PI;
-                
-                // 绘制制热量（红色）
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, 0, hotAngle);
-                ctx.closePath();
-                ctx.fillStyle = '#dc2626';
-                ctx.fill();
-                
-                // 绘制功耗（黄色）
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.arc(centerX, centerY, radius, hotAngle, 2 * Math.PI);
-                ctx.closePath();
-                ctx.fillStyle = '#f59e0b';
-                ctx.fill();
-                
-                // 添加标签
-                ctx.fillStyle = '#fff';
-                ctx.font = '12px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`Q_hot: ${qHot.toFixed(1)}kW`, centerX, centerY - 10);
-                ctx.fillText(`W: ${w.toFixed(1)}kW`, centerX, centerY + 10);
+    // 获取蒸汽压力
+    const P_source_Pa = inputs.source.steamPressure 
+        ? inputs.source.steamPressure * 100000 
+        : getSatVaporPressure(inputs.source.steamTemp);
+    const P_sink_Pa = getSatVaporPressure(inputs.sink.steamTemp);
+    
+    // 验证压力有效性
+    if (!P_source_Pa || isNaN(P_source_Pa) || P_source_Pa <= 0) {
+        throw new Error("MVR模式：热源蒸汽压力无效，请检查热源蒸汽温度或手动输入压力。");
+    }
+    if (!P_sink_Pa || isNaN(P_sink_Pa) || P_sink_Pa <= 0) {
+        throw new Error("MVR模式：热汇蒸汽压力无效，请检查热汇蒸汽温度。");
+    }
+    
+    const P_source_bara = P_source_Pa / 100000;
+    const P_sink_bara = P_sink_Pa / 100000;
+    
+    // 计算压缩比（添加安全检查）
+    if (P_source_bara <= 0) {
+        throw new Error("MVR模式：热源压力必须大于0。");
+    }
+    const compressionRatio = P_sink_bara / P_source_bara;
+    
+    if (isNaN(compressionRatio) || compressionRatio <= 0) {
+        throw new Error("MVR模式：压缩比计算无效，请检查热源和热汇的蒸汽温度。");
+    }
+    
+    // 计算热汇蒸汽（排气）的焓值
+    const h_latent_sink = getSteamLatentHeat(inputs.sink.steamTemp);
+    const h_sensible_sink = CP_WATER * (inputs.sink.steamTemp - inputs.sink.makeupTemp);
+    const h_total_sink = h_latent_sink + h_sensible_sink; // 热汇蒸汽冷凝释放的总焓
+    
+    // 验证热汇总焓
+    if (!h_total_sink || isNaN(h_total_sink) || h_total_sink <= 0) {
+        throw new Error("MVR模式：热汇总焓计算无效，请检查热汇蒸汽温度和补水温度。");
+    }
+    
+    // 计算热源蒸汽的焓值
+    const h_latent_source = getSteamLatentHeat(inputs.source.steamTemp);
+    const h_sensible_source = CP_WATER * (inputs.source.steamTemp - 20); // 假设冷凝后冷却到20°C
+    const h_total_source = h_latent_source + h_sensible_source; // 热源蒸汽释放的总焓
+    
+    // 验证热源总焓
+    if (!h_total_source || isNaN(h_total_source) || h_total_source <= 0) {
+        throw new Error("MVR模式：热源总焓计算无效，请检查热源蒸汽温度。");
+    }
+    
+    // === 计算等熵压缩功 ===
+    // 热源入口蒸汽总焓（饱和蒸汽）
+    const T_source_K = inputs.source.steamTemp + 273.15;
+    const h_source_total = getSaturatedSteamEnthalpy(inputs.source.steamTemp);
+    
+    // 等熵压缩后的焓值
+    const h_sink_isentropic = getIsentropicOutletEnthalpy(
+        h_source_total, 
+        T_source_K, 
+        compressionRatio, 
+        GAMMA
+    );
+    
+    // 等熵压缩功 (kJ/kg)
+    const w_isentropic_per_kg = h_sink_isentropic - h_source_total;
+    
+    // 验证等熵压缩功
+    if (isNaN(w_isentropic_per_kg)) {
+        throw new Error("MVR模式：等熵压缩功计算失败，请检查输入参数。");
+    }
+    if (w_isentropic_per_kg < 0) {
+        throw new Error("MVR模式：等熵压缩功为负值，热源温度必须低于热汇温度。");
+    }
+    
+    // 实际压缩功 = 等熵压缩功 / 等熵效率
+    if (ETA_ISENTROPIC <= 0 || ETA_ISENTROPIC > 1) {
+        throw new Error("MVR模式：等熵效率无效。");
+    }
+    const w_actual_per_kg = w_isentropic_per_kg / ETA_ISENTROPIC;
+    
+    if (isNaN(w_actual_per_kg) || w_actual_per_kg <= 0) {
+        throw new Error("MVR模式：实际压缩功计算无效，请检查输入参数。");
+    }
+    
+    // === 计算实际压缩后的排气状态 ===
+    // 计算实际压缩后的排气焓值
+    const h_outlet_actual = h_source_total + w_actual_per_kg;
+    
+    // 计算排气压力对应的饱和温度
+    const T_sat_sink = getSaturationTempFromPressure(P_sink_Pa);
+    
+    // 计算排气压力下饱和蒸汽的焓值
+    const h_sat_sink = getSaturatedSteamEnthalpy(T_sat_sink);
+    
+    // 根据实际排气焓值反推实际排气温度
+    const T_outlet_actual = getSteamTempFromEnthalpy(h_outlet_actual, P_sink_Pa);
+    
+    // 判断排气是否过热
+    const isOutletSuperheated = T_outlet_actual > T_sat_sink;
+    
+    // 计算卡诺极限COP
+    const T_cond_K = inputs.sink.steamTemp + 273.15;
+    const T_evap_K = inputs.source.steamTemp + 273.15;
+    const tempDiff = T_cond_K - T_evap_K;
+    
+    if (tempDiff <= 0) {
+        throw new Error("MVR模式：热汇温度必须高于热源温度。");
+    }
+    
+    const copCarnotMax = T_cond_K / tempDiff;
+    
+    if (isNaN(copCarnotMax) || copCarnotMax <= 0) {
+        throw new Error("MVR模式：卡诺极限COP计算无效。");
+    }
+    
+    // 注意：etaActual将在mvrCOP计算后根据实际COP计算，而不是使用用户输入的eta值
+    
+    // 根据mode确定计算逻辑
+    let Q_cold_kW, Q_hot_kW, massFlow_kg_s, sinkMassFlow_kg_s;
+    
+    if (inputs.mode === 'source') {
+        // 已知热源算热汇
+        if (inputs.inputType === 'flow') {
+            const flow = inputs.source.flow;
+            if (!flow || isNaN(flow) || flow <= 0) {
+                throw new Error("MVR模式：热源蒸汽流量无效，请输入有效的流量值。");
             }
+            const unit = inputs.source.unit || 't/h';
+            if (unit === 't/h') {
+                massFlow_kg_s = flow * 1000 / 3600;
+            } else if (unit === 'm3/h') {
+                if (T_source_K <= 0 || isNaN(T_source_K)) {
+                    throw new Error("MVR模式：热源温度无效，无法计算体积流量。");
+                }
+                const rho_kg_m3 = P_source_Pa / (R_VAPOR_J * T_source_K);
+                if (isNaN(rho_kg_m3) || rho_kg_m3 <= 0) {
+                    throw new Error("MVR模式：蒸汽密度计算无效，请检查热源压力和温度。");
+                }
+                massFlow_kg_s = flow * rho_kg_m3 / 3600;
+            } else if (unit === 'L/min') {
+                if (T_source_K <= 0 || isNaN(T_source_K)) {
+                    throw new Error("MVR模式：热源温度无效，无法计算体积流量。");
+                }
+                const rho_kg_m3 = P_source_Pa / (R_VAPOR_J * T_source_K);
+                if (isNaN(rho_kg_m3) || rho_kg_m3 <= 0) {
+                    throw new Error("MVR模式：蒸汽密度计算无效，请检查热源压力和温度。");
+                }
+                massFlow_kg_s = flow * rho_kg_m3 / 60;
+            } else {
+                throw new Error(`MVR模式：不支持的流量单位 ${unit}，请使用 t/h、m³/h 或 L/min。`);
+            }
+            
+            // 计算Q_cold
+            Q_cold_kW = massFlow_kg_s * h_total_source;
+            
+            // 根据实际压缩功计算Q_hot
+            const W_actual_kW = massFlow_kg_s * w_actual_per_kg;
+            Q_hot_kW = Q_cold_kW + W_actual_kW;
+            
+            // 根据Q_hot计算热汇流量
+            if (h_total_sink <= 0 || isNaN(h_total_sink)) {
+                throw new Error("MVR模式：热汇总焓无效，无法计算热汇流量。");
+            }
+            sinkMassFlow_kg_s = Q_hot_kW / h_total_sink;
+            
+        } else {
+            // 根据热源负荷计算
+            const load = inputs.source.load;
+            if (!load || isNaN(load) || load <= 0) {
+                throw new Error("MVR模式：热源可用负荷无效，请输入有效的负荷值。");
+            }
+            if (h_total_source <= 0) {
+                throw new Error("MVR模式：热源总焓无效，请检查热源蒸汽温度。");
+            }
+            
+            Q_cold_kW = load;
+            massFlow_kg_s = Q_cold_kW / h_total_source;
+            
+            // 根据实际压缩功计算Q_hot
+            const W_actual_kW = massFlow_kg_s * w_actual_per_kg;
+            Q_hot_kW = Q_cold_kW + W_actual_kW;
+            
+            if (h_total_sink <= 0 || isNaN(h_total_sink)) {
+                throw new Error("MVR模式：热汇总焓无效，无法计算热汇流量。");
+            }
+            sinkMassFlow_kg_s = Q_hot_kW / h_total_sink;
         }
+    } else {
+        // 已知热汇算热源
+        if (inputs.inputType === 'flow') {
+            const flow = inputs.sink.flow;
+            if (!flow || isNaN(flow) || flow <= 0) {
+                throw new Error("MVR模式：热汇蒸汽流量无效，请输入有效的流量值。");
+            }
+            const unit = inputs.sink.unit || 't/h';
+            if (unit === 't/h') {
+                sinkMassFlow_kg_s = flow * 1000 / 3600;
+            } else if (unit === 'm3/h') {
+                const T_sink_K = inputs.sink.steamTemp + 273.15;
+                if (T_sink_K <= 0 || isNaN(T_sink_K)) {
+                    throw new Error("MVR模式：热汇温度无效，无法计算体积流量。");
+                }
+                const rho_kg_m3 = P_sink_Pa / (R_VAPOR_J * T_sink_K);
+                if (isNaN(rho_kg_m3) || rho_kg_m3 <= 0) {
+                    throw new Error("MVR模式：蒸汽密度计算无效，请检查热汇压力和温度。");
+                }
+                sinkMassFlow_kg_s = flow * rho_kg_m3 / 3600;
+            } else if (unit === 'L/min') {
+                const T_sink_K = inputs.sink.steamTemp + 273.15;
+                if (T_sink_K <= 0 || isNaN(T_sink_K)) {
+                    throw new Error("MVR模式：热汇温度无效，无法计算体积流量。");
+                }
+                const rho_kg_m3 = P_sink_Pa / (R_VAPOR_J * T_sink_K);
+                if (isNaN(rho_kg_m3) || rho_kg_m3 <= 0) {
+                    throw new Error("MVR模式：蒸汽密度计算无效，请检查热汇压力和温度。");
+                }
+                sinkMassFlow_kg_s = flow * rho_kg_m3 / 60;
+            } else {
+                throw new Error(`MVR模式：不支持的流量单位 ${unit}，请使用 t/h、m³/h 或 L/min。`);
+            }
+            
+            // 计算Q_hot（排气质量流量下饱和蒸汽冷凝下来的热负荷）
+            Q_hot_kW = sinkMassFlow_kg_s * h_total_sink;
+            
+            // 根据实际压缩功反算Q_cold和热源流量
+            // Q_hot = Q_cold + W_actual
+            // W_actual = massFlow_source * w_actual_per_kg
+            // 所以：Q_hot = Q_cold + massFlow_source * w_actual_per_kg
+            // 同时：Q_cold = massFlow_source * h_total_source
+            // 因此：Q_hot = massFlow_source * (h_total_source + w_actual_per_kg)
+            // 所以：massFlow_source = Q_hot / (h_total_source + w_actual_per_kg)
+            
+            if (h_total_source <= 0) {
+                throw new Error("MVR模式：热源总焓无效，请检查热源蒸汽温度。");
+            }
+            const denominator = h_total_source + w_actual_per_kg;
+            if (denominator <= 0 || isNaN(denominator)) {
+                throw new Error("MVR模式：计算分母无效，请检查输入参数。");
+            }
+            massFlow_kg_s = Q_hot_kW / denominator;
+            Q_cold_kW = massFlow_kg_s * h_total_source;
+            
+        } else {
+            // 根据热汇负荷计算
+            const load = inputs.sink.load;
+            if (!load || isNaN(load) || load <= 0) {
+                throw new Error("MVR模式：热汇需求负荷无效，请输入有效的负荷值。");
+            }
+            if (h_total_sink <= 0) {
+                throw new Error("MVR模式：热汇总焓无效，请检查热汇蒸汽温度。");
+            }
+            
+            Q_hot_kW = load;
+            sinkMassFlow_kg_s = Q_hot_kW / h_total_sink;
+            
+            // 根据实际压缩功反算
+            if (h_total_source <= 0) {
+                throw new Error("MVR模式：热源总焓无效，请检查热源蒸汽温度。");
+            }
+            const denominator = h_total_source + w_actual_per_kg;
+            if (denominator <= 0 || isNaN(denominator)) {
+                throw new Error("MVR模式：计算分母无效，请检查输入参数。");
+            }
+            massFlow_kg_s = Q_hot_kW / denominator;
+            Q_cold_kW = massFlow_kg_s * h_total_source;
+        }
+    }
+    
+    if (massFlow_kg_s <= 0 || isNaN(massFlow_kg_s)) {
+        throw new Error("MVR模式：计算出的热源蒸汽质量流量无效，请检查输入参数。");
+    }
+    
+    // === 计算喷水补水量（将过热排气冷却到饱和状态） ===
+    // 注意：补水量计算应该在热汇流量计算之前，因为补水量会影响最终的热汇流量
+    let makeupWaterFlow_kg_s = 0;
+    if (isOutletSuperheated && T_outlet_actual > T_sat_sink) {
+        // 排气过热，需要喷水降温
+        // 能量平衡：m_steam * h_outlet + m_water * h_water = (m_steam + m_water) * h_saturated
+        // 其中：
+        // - m_steam = massFlow_kg_s（压缩后的蒸汽流量）
+        // - h_outlet = h_outlet_actual（实际排气焓值）
+        // - h_water = CP_WATER * inputs.sink.makeupTemp（补水焓值，0°C基准）
+        // - h_saturated = h_sat_sink（饱和蒸汽焓值）
         
-        // 温度变化条形图
-        const tempCanvas = document.getElementById('tempChartCanvas');
-        if (tempCanvas && currentInputs) {
-            const ctx = tempCanvas.getContext('2d');
-            const width = tempCanvas.width = tempCanvas.offsetWidth || 300;
-            const height = tempCanvas.height = tempCanvas.offsetHeight || 200;
-            
-            ctx.clearRect(0, 0, width, height);
-            
-            const sourceIn = currentInputs.source.tempIn || 0;
-            const sourceOut = currentInputs.source.tempOut || 0;
-            const sinkIn = currentInputs.sink.tempIn || 0;
-            const sinkOut = currentInputs.sink.tempOut || 0;
-            const maxTemp = Math.max(sourceIn, sourceOut, sinkIn, sinkOut, 100);
-            const barWidth = width / 4 - 10;
-            const maxHeight = height - 40;
-            
-            // 热源进口
-            const h1 = (sourceIn / maxTemp) * maxHeight;
-            ctx.fillStyle = '#2563eb';
-            ctx.fillRect(10, height - h1 - 20, barWidth, h1);
-            ctx.fillStyle = '#000';
-            ctx.font = '10px sans-serif';
-            ctx.fillText('源入', 10 + barWidth/2 - 10, height - 5);
-            ctx.fillText(sourceIn.toFixed(1) + '°C', 10 + barWidth/2 - 15, height - h1 - 25);
-            
-            // 热源出口
-            const h2 = (sourceOut / maxTemp) * maxHeight;
-            ctx.fillStyle = '#3b82f6';
-            ctx.fillRect(20 + barWidth, height - h2 - 20, barWidth, h2);
-            ctx.fillStyle = '#000';
-            ctx.fillText('源出', 20 + barWidth + barWidth/2 - 10, height - 5);
-            ctx.fillText(sourceOut.toFixed(1) + '°C', 20 + barWidth + barWidth/2 - 15, height - h2 - 25);
-            
-            // 热汇进口
-            const h3 = (sinkIn / maxTemp) * maxHeight;
-            ctx.fillStyle = '#dc2626';
-            ctx.fillRect(30 + barWidth * 2, height - h3 - 20, barWidth, h3);
-            ctx.fillStyle = '#000';
-            ctx.fillText('汇入', 30 + barWidth * 2 + barWidth/2 - 10, height - 5);
-            ctx.fillText(sinkIn.toFixed(1) + '°C', 30 + barWidth * 2 + barWidth/2 - 15, height - h3 - 25);
-            
-            // 热汇出口
-            const h4 = (sinkOut / maxTemp) * maxHeight;
-            ctx.fillStyle = '#ef4444';
-            ctx.fillRect(40 + barWidth * 3, height - h4 - 20, barWidth, h4);
-            ctx.fillStyle = '#000';
-            ctx.fillText('汇出', 40 + barWidth * 3 + barWidth/2 - 10, height - 5);
-            ctx.fillText(sinkOut.toFixed(1) + '°C', 40 + barWidth * 3 + barWidth/2 - 15, height - h4 - 25);
+        const h_water = CP_WATER * inputs.sink.makeupTemp;
+        const h_outlet = h_outlet_actual;
+        const h_sat = h_sat_sink;
+        
+        // 从能量平衡方程求解 m_water：
+        // m_steam * h_outlet + m_water * h_water = (m_steam + m_water) * h_sat
+        // m_steam * h_outlet + m_water * h_water = m_steam * h_sat + m_water * h_sat
+        // m_water * (h_water - h_sat) = m_steam * (h_sat - h_outlet)
+        // m_water = m_steam * (h_sat - h_outlet) / (h_water - h_sat)
+        
+        if (h_water < h_sat) { // 确保分母为负（补水温度低于饱和温度）
+            makeupWaterFlow_kg_s = massFlow_kg_s * (h_sat - h_outlet) / (h_water - h_sat);
+            makeupWaterFlow_kg_s = Math.max(0, makeupWaterFlow_kg_s); // 确保非负
+        } else {
+            // 补水温度过高，无法降温，补水量为0
+            makeupWaterFlow_kg_s = 0;
         }
-    });
+    } else {
+        // 排气已经是饱和或湿蒸汽，不需要喷水降温
+        makeupWaterFlow_kg_s = 0;
+    }
+    
+    const makeupWaterFlow_t_h = makeupWaterFlow_kg_s * 3600 / 1000;
+    
+    // 更新热汇流量：热汇流量 = 热源流量 + 补水量（喷水后）
+    // 注意：sinkMassFlow_kg_s 用于显示和流量计算，但不影响能量平衡
+    sinkMassFlow_kg_s = massFlow_kg_s + makeupWaterFlow_kg_s;
+    
+    // 验证更新后的热汇流量
+    if (sinkMassFlow_kg_s <= 0 || isNaN(sinkMassFlow_kg_s)) {
+        throw new Error("MVR模式：计算出的热汇蒸汽质量流量无效，请检查输入参数。");
+    }
+    
+    // === 确保能量平衡：Q_hot = Q_cold + W ===
+    // 喷水过程是等焓混合过程，不改变系统的总能量
+    // 因此喷水后，能量平衡关系 Q_hot = Q_cold + W 仍然成立
+    // 注意：不重新计算 Q_hot_kW，保持能量平衡
+    
+    // 实际压缩功（考虑了等熵效率）
+    const W_actual_kW = massFlow_kg_s * w_actual_per_kg;
+    
+    // 确保能量平衡：Q_hot = Q_cold + W
+    // 喷水后，制热量保持不变，因为喷水只是将过热蒸汽冷却到饱和状态，不改变系统的总能量
+    Q_hot_kW = Q_cold_kW + W_actual_kW;
+    
+    // 验证压缩功
+    if (isNaN(W_actual_kW) || W_actual_kW <= 0) {
+        throw new Error("MVR模式：压缩功计算无效，请检查输入参数。");
+    }
+    
+    // 机械效率影响驱动功率（实际电机功率）
+    if (ETA_MECHANICAL <= 0 || ETA_MECHANICAL > 1) {
+        throw new Error("MVR模式：机械效率无效。");
+    }
+    const W_shaft_kW = W_actual_kW / ETA_MECHANICAL;
+    
+    // 基于实际压缩功计算的MVR COP
+    if (W_actual_kW <= 0 || isNaN(W_actual_kW)) {
+        throw new Error("MVR模式：压缩功无效，无法计算MVR COP。");
+    }
+    const mvrCOP = Q_hot_kW / W_actual_kW;
+    
+    // 验证MVR COP
+    if (isNaN(mvrCOP) || mvrCOP <= 0) {
+        throw new Error("MVR模式：MVR COP计算无效，请检查输入参数。");
+    }
+    
+    // 在MVR模式下，直接使用用户输入的eta作为热力完善度
+    // 因为用户输入的eta是系统的整体热力完善度，应该直接作为结果
+    // 而不是根据计算出的COP反推
+    let etaActual;
+    if (inputs.eta.type === 'custom_cop') {
+        // 如果用户输入的是自定义COP，转换为eta
+        etaActual = inputs.eta.customCop / copCarnotMax;
+    } else {
+        // 直接使用用户输入的eta
+        etaActual = inputs.eta.customEta;
+    }
+    
+    // 验证热力完善度
+    if (isNaN(etaActual) || etaActual <= 0 || etaActual > 1) {
+        throw new Error("MVR模式：热力完善度无效，请检查输入参数。");
+    }
+    
+    // 注意：计算出的mvrCOP可能与 etaActual × copCarnotMax 有差异
+    // 这是因为压缩功的计算考虑了等熵效率等因素
+    // 但热力完善度应该反映用户输入的期望值
+    const expectedCOP = copCarnotMax * etaActual;
+    const copDifference = Math.abs(mvrCOP - expectedCOP) / expectedCOP;
+    if (copDifference > 0.05) { // 如果差异超过5%，给出提示
+        console.info(`MVR模式：计算出的COP(${mvrCOP.toFixed(2)})与基于热力完善度的期望COP(${expectedCOP.toFixed(2)})有差异，这是正常的，因为压缩功计算考虑了等熵效率等因素。`);
+    }
+    
+    // 计算压缩温升
+    const tempLift = inputs.sink.steamTemp - inputs.source.steamTemp;
+    
+    // 等熵压缩后的温度（理论值）
+    const T_sink_isentropic_K = T_source_K * Math.pow(compressionRatio, (GAMMA - 1) / GAMMA);
+    const T_sink_isentropic = T_sink_isentropic_K - 273.15;
+    
+    return {
+        compressionRatio: compressionRatio,
+        compressionWork_kW: W_actual_kW, // 实际压缩功（考虑了等熵效率）
+        shaftPower_kW: W_shaft_kW, // 轴功率（考虑了机械效率）
+        mvrCOP: mvrCOP,
+        copCarnotMax: copCarnotMax,
+        etaActual: etaActual,
+        etaIsentropic: ETA_ISENTROPIC, // 等熵效率
+        etaMechanical: ETA_MECHANICAL, // 机械效率
+        tempLift_C: tempLift,
+        tempLiftIsentropic_C: T_sink_isentropic - inputs.source.steamTemp, // 等熵温升
+        steamFlow_t_h: massFlow_kg_s * 3600 / 1000, // 热源流量
+        sinkSteamFlow_t_h: sinkMassFlow_kg_s * 3600 / 1000, // 热汇流量（包含补水量）
+        makeupWaterFlow_t_h: makeupWaterFlow_t_h, // 补水量（喷水降温所需）
+        sourcePressure_bara: P_source_bara,
+        sinkPressure_bara: P_sink_bara,
+        Q_cold_kW: Q_cold_kW,
+        Q_hot_kW: Q_hot_kW,
+        massFlow_kg_s: massFlow_kg_s,
+        sinkMassFlow_kg_s: sinkMassFlow_kg_s,
+        // 新增字段：排气状态信息
+        outletTempActual_C: T_outlet_actual, // 实际排气温度
+        outletTempSaturated_C: T_sat_sink, // 排气压力对应的饱和温度
+        isOutletSuperheated: isOutletSuperheated, // 排气是否过热
+        outletEnthalpy_kJ_kg: h_outlet_actual, // 实际排气焓值
+        saturatedEnthalpy_kJ_kg: h_sat_sink // 饱和蒸汽焓值
+    };
+}
+
+// 显示工业热泵选型条件
+function renderSelectionCriteria(result) {
+    const criteriaDiv = document.getElementById('selectionCriteria');
+    if (!criteriaDiv || !result.feasibility || !currentInputs) return;
+    
+    criteriaDiv.classList.remove('hidden');
+    
+    const source = currentInputs.source;
+    const sink = currentInputs.sink;
+    
+    // 热源条件
+    const sourceTempRange = `${source.tempOut} ~ ${source.tempIn} °C`;
+    const sourceMediaMap = { water: '水', air: '空气', steam: '蒸汽' };
+    const sourceMedia = sourceMediaMap[source.type] || source.type;
+    const sourceFlow = source.flow ? `${source.flow} ${source.unit || 't/h'}` : '---';
+    const sourceLoad = result.qCold_kW ? `${result.qCold_kW.toFixed(1)} kW` : '---';
+    
+    document.getElementById('criteriaSourceTempRange').textContent = sourceTempRange;
+    document.getElementById('criteriaSourceMedia').textContent = sourceMedia;
+    document.getElementById('criteriaSourceFlow').textContent = sourceFlow;
+    document.getElementById('criteriaSourceLoad').textContent = sourceLoad;
+    
+    // 热汇条件
+    const sinkTempRange = `${sink.tempIn} ~ ${sink.tempOut} °C`;
+    const sinkMediaMap = { water: '水', air: '空气', steam: '蒸汽' };
+    const sinkMedia = sinkMediaMap[sink.type] || sink.type;
+    const sinkFlow = sink.flow ? `${sink.flow} ${sink.unit || 't/h'}` : '---';
+    const sinkLoad = result.qHot_kW ? `${result.qHot_kW.toFixed(1)} kW` : '---';
+    
+    document.getElementById('criteriaSinkTempRange').textContent = sinkTempRange;
+    document.getElementById('criteriaSinkMedia').textContent = sinkMedia;
+    document.getElementById('criteriaSinkFlow').textContent = sinkFlow;
+    document.getElementById('criteriaSinkLoad').textContent = sinkLoad;
+    
+    // 性能要求
+    const tempLift = sink.tempOut - source.tempIn;
+    const tempLiftText = tempLift > 0 ? `+${tempLift.toFixed(1)} °C` : `${tempLift.toFixed(1)} °C`;
+    const copRequired = result.copActual ? result.copActual.toFixed(2) : '---';
+    const compressorPower = result.W_kW ? `${result.W_kW.toFixed(1)} kW` : '---';
+    
+    document.getElementById('criteriaTempLift').textContent = tempLiftText;
+    document.getElementById('criteriaCopRequired').textContent = copRequired;
+    document.getElementById('criteriaCompressorPower').textContent = compressorPower;
 }
 
 // 更新进度条
@@ -1450,23 +2062,137 @@ function updateProgressBars(result) {
     }
 }
 
+// 显示MVR结果
+function displayMVRResults(mvrData) {
+    const mvrResultsDiv = document.getElementById('mvrResults');
+    if (!mvrResultsDiv) return;
+    
+    mvrResultsDiv.classList.remove('hidden');
+    
+    const num = (n, dec = 2) => (n === null || typeof n === 'undefined' || isNaN(n)) ? '---' : n.toFixed(dec);
+    
+    // 更新现有显示项
+    const updateElement = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+    
+    updateElement('mvrCompressionRatio', num(mvrData.compressionRatio, 2));
+    updateElement('mvrCompressionWork', `${num(mvrData.compressionWork_kW, 2)} kW`);
+    updateElement('mvrCOP', num(mvrData.mvrCOP, 2));
+    updateElement('mvrTempLift', `${num(mvrData.tempLift_C, 1)} °C`);
+    updateElement('mvrSteamFlow', `${num(mvrData.steamFlow_t_h, 2)} t/h`);
+    updateElement('mvrSourcePressure', `${num(mvrData.sourcePressure_bara, 3)} bara`);
+    updateElement('mvrSinkPressure', `${num(mvrData.sinkPressure_bara, 3)} bara`);
+    
+    // 新增参数（如果HTML中有对应元素则显示）
+    if (mvrData.shaftPower_kW !== undefined) {
+        updateElement('mvrShaftPower', `${num(mvrData.shaftPower_kW, 2)} kW`);
+    }
+    if (mvrData.etaIsentropic !== undefined) {
+        updateElement('mvrEtaIsentropic', `${num(mvrData.etaIsentropic * 100, 1)} %`);
+    }
+    if (mvrData.tempLiftIsentropic_C !== undefined) {
+        updateElement('mvrTempLiftIsentropic', `${num(mvrData.tempLiftIsentropic_C, 1)} °C`);
+    }
+}
+
 // 修改displayResults函数以包含新功能
 const originalDisplayResults = displayResults;
 displayResults = function(data) {
+    // MVR模式特殊处理
+    if (data.isMVRMode) {
+        // 确保结果区域显示
+        resultsDiv.classList.remove('hidden');
+        resultData.classList.remove('hidden');
+        resultMessage.classList.remove('hidden');
+        
+        // 隐藏常规结果的部分内容
+        const mvrResultsDiv = document.getElementById('mvrResults');
+        const selectionCriteriaDiv = document.getElementById('selectionCriteria');
+        
+        if (selectionCriteriaDiv) selectionCriteriaDiv.classList.add('hidden');
+        
+        // 显示MVR结果
+        displayMVRResults(data);
+        
+        // 更新基础结果显示
+        const num = (n, dec = 2) => (n === null || typeof n === 'undefined' || isNaN(n)) ? '---' : n.toFixed(dec);
+        const kw = (n) => `${num(n, 2)} kW`;
+        
+        // 显示成功消息
+        showMessage(data.feasibility ? 'MVR计算完成' : 'MVR计算失败', !data.feasibility);
+        
+        const feasibilityEl = document.getElementById('resFeasibility');
+        if (feasibilityEl) {
+            feasibilityEl.textContent = data.feasibility ? '可行' : '不可行';
+            feasibilityEl.className = data.feasibility ? 'font-bold text-lg text-green-600' : 'font-bold text-lg text-red-600';
+        }
+        
+        // 隐藏不适用于MVR的结果组
+        if (sourceResultGroup) sourceResultGroup.classList.add('hidden');
+        if (sinkResultGroup) sinkResultGroup.classList.add('hidden');
+        
+        // 更新系统总览（MVR模式）
+        if (document.getElementById('resQcold')) {
+            document.getElementById('resQcold').textContent = kw(data.Q_cold_kW);
+        }
+        if (document.getElementById('resQhot')) {
+            document.getElementById('resQhot').textContent = kw(data.Q_hot_kW);
+        }
+        if (document.getElementById('resW')) {
+            document.getElementById('resW').textContent = kw(data.compressionWork_kW);
+        }
+        if (document.getElementById('resSourceFlow')) {
+            document.getElementById('resSourceFlow').textContent = `${num(data.steamFlow_t_h, 2)} t/h`;
+        }
+        if (document.getElementById('resSinkFlow')) {
+            // MVR模式下，热汇流量 = 热源流量 + 补水量
+            const sinkFlow = data.sinkSteamFlow_t_h !== undefined ? data.sinkSteamFlow_t_h : data.steamFlow_t_h;
+            document.getElementById('resSinkFlow').textContent = `${num(sinkFlow, 2)} t/h`;
+        }
+        if (document.getElementById('resCopActual')) {
+            document.getElementById('resCopActual').textContent = num(data.mvrCOP, 2);
+        }
+        if (document.getElementById('resCopCarnot')) {
+            document.getElementById('resCopCarnot').textContent = num(data.copCarnotMax, 2);
+        }
+        if (document.getElementById('resEta')) {
+            document.getElementById('resEta').textContent = `${num(data.etaActual * 100, 1)} %`;
+        }
+        
+        // 更新进度条
+        updateProgressBars(data);
+        
+        // 显示操作按钮
+        if (resultActions) resultActions.classList.remove('hidden');
+        
+        // 显示Toast通知
+        showToast('MVR计算完成！', 'success');
+        
+        // 滚动到结果区域
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        // 常规模式
     originalDisplayResults(data);
+        
+        // 隐藏MVR结果
+        const mvrResultsDiv = document.getElementById('mvrResults');
+        if (mvrResultsDiv) mvrResultsDiv.classList.add('hidden');
     
     if (data.feasibility) {
         // 显示Toast通知
         showToast('计算完成！', 'success');
         
-        // 渲染图表
+            // 显示选型条件
         setTimeout(() => {
-            renderResultCharts(data);
+                renderSelectionCriteria(data);
             updateProgressBars(data);
         }, 100);
         
         // 滚动到结果区域
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 };
 
@@ -1479,7 +2205,9 @@ performCalculation = function() {
         try {
             originalPerformCalculation();
         } catch (e) {
-            showToast('计算失败：' + e.message, 'error');
+            console.error("PerformCalculation wrapper error:", e);
+            showToast('计算失败：' + (e.message || '未知错误'), 'error');
+            showMessage(e.message || '发生未知计算错误，请检查输入参数。', false);
         } finally {
             setLoadingState(false);
         }
@@ -1498,4 +2226,4 @@ setupFieldValidation();
 setupKeyboardShortcuts();
 
 // 更新版本号
-console.log("工业热泵匹配计算器 V5.8.0 (UI/UX升级版) 初始化完成。");
+console.log("工业热泵匹配计算器 V6.0.0 初始化完成。");

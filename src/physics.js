@@ -156,3 +156,96 @@ export function getVaporPressure(P_bara, W_humidityRatio) {
     return (W_humidityRatio * P_total) / (0.62198 + W_humidityRatio); 
 }
 
+// MVR专用：计算饱和蒸汽的总焓值 (kJ/kg)
+export function getSaturatedSteamEnthalpy(T_celsius) {
+    const h_latent = getSteamLatentHeat(T_celsius);
+    const h_water = CP_WATER * T_celsius; // 0°C为基准的水的焓值
+    return h_water + h_latent; // 饱和蒸汽总焓
+}
+
+// MVR专用：计算等熵压缩后的焓值（理想气体近似）
+export function getIsentropicOutletEnthalpy(h_in, T_in_K, compressionRatio, gamma) {
+    // 等熵压缩温度: T_out = T_in * (P_out/P_in)^((gamma-1)/gamma)
+    const T_out_K = T_in_K * Math.pow(compressionRatio, (gamma - 1) / gamma);
+    const delta_T = T_out_K - T_in_K;
+    // 对于水蒸气，近似使用比热容计算焓增
+    const CP_VAPOR_APPROX = 2.0; // kJ/kg·K (水蒸气在100-200°C的平均比热容)
+    const delta_h = CP_VAPOR_APPROX * delta_T;
+    return h_in + delta_h;
+}
+
+// MVR专用：根据压力反推饱和温度（使用二分法迭代）
+export function getSaturationTempFromPressure(P_Pa) {
+    if (P_Pa <= 0 || isNaN(P_Pa)) {
+        throw new Error("压力必须大于0");
+    }
+    
+    // 水的临界压力约为22.064 MPa，临界温度约为374°C
+    // 搜索范围：0.01°C 到 373°C
+    let T_low = 0.01;
+    let T_high = 373.0;
+    const tolerance = 0.01; // 温度容差：0.01°C
+    const maxIterations = 50;
+    
+    // 检查边界
+    const P_low = getSatVaporPressure(T_low);
+    if (P_Pa <= P_low) {
+        return T_low;
+    }
+    const P_high = getSatVaporPressure(T_high);
+    if (P_Pa >= P_high) {
+        return T_high;
+    }
+    
+    // 二分法迭代
+    for (let i = 0; i < maxIterations; i++) {
+        const T_guess = (T_low + T_high) / 2;
+        const P_guess = getSatVaporPressure(T_guess);
+        const error = P_guess - P_Pa;
+        
+        if (Math.abs(error) < tolerance || Math.abs(T_high - T_low) < tolerance) {
+            return T_guess;
+        }
+        
+        if (error > 0) {
+            T_high = T_guess;
+        } else {
+            T_low = T_guess;
+        }
+    }
+    
+    // 如果未收敛，返回中间值
+    return (T_low + T_high) / 2;
+}
+
+// MVR专用：根据焓值和压力反推蒸汽温度（判断过热/饱和）
+export function getSteamTempFromEnthalpy(h_kJ_kg, P_Pa) {
+    if (isNaN(h_kJ_kg) || h_kJ_kg <= 0) {
+        throw new Error("焓值无效");
+    }
+    if (P_Pa <= 0 || isNaN(P_Pa)) {
+        throw new Error("压力无效");
+    }
+    
+    // 1. 计算该压力下的饱和温度
+    const T_sat = getSaturationTempFromPressure(P_Pa);
+    
+    // 2. 计算饱和蒸汽焓值
+    const h_sat = getSaturatedSteamEnthalpy(T_sat);
+    
+    // 3. 如果 h <= h_saturated，则为饱和或湿蒸汽，返回饱和温度
+    if (h_kJ_kg <= h_sat) {
+        return T_sat;
+    }
+    
+    // 4. 如果 h > h_saturated，则为过热蒸汽，反推温度
+    // 使用迭代法：h = h_sat + CP_vapor * (T - T_sat)
+    // 其中 CP_vapor 是过热蒸汽的比热容（近似为2.0 kJ/kg·K）
+    const CP_VAPOR_APPROX = 2.0; // kJ/kg·K
+    const delta_h = h_kJ_kg - h_sat;
+    const T_overheated = T_sat + delta_h / CP_VAPOR_APPROX;
+    
+    // 验证温度合理性（不超过临界温度）
+    return Math.min(T_overheated, 373.0);
+}
+

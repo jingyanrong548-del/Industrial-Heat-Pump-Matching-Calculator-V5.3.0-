@@ -1,6 +1,6 @@
 {
   "name": "industrial-heat-pump-calculator",
-  "version": "5.8.0",
+  "version": "6.0.0",
   "type": "module",
   "description": "工业热泵匹配计算器",
   "scripts": {
