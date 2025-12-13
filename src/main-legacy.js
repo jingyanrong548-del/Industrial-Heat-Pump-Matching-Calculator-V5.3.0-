@@ -22,10 +22,10 @@ const {
     getSteamTempFromEnthalpy
 } = physics;
 
-// V4.0.0: 跟踪参数变化状态
+// V6.2.1: 跟踪参数变化状态
 let isResultStale = false; 
 
-// NEW V5.1.0: 暂存对比方案
+// NEW V6.2.1: 暂存对比方案
 let comparisonCases = [];
 let currentInputs = null;
 let currentResult = null;
@@ -64,7 +64,7 @@ const sinkSteamMakeupWaterGroup = document.getElementById('sinkSteamMakeupWaterG
 const sourceUnit = document.getElementById('sourceUnit');
 const sinkUnit = document.getElementById('sinkUnit');
 
-// NEW V5.1.0: 新的 DOM 元素
+// NEW V6.2.1: 新的 DOM 元素
 const resultActions = document.getElementById('resultActions');
 const saveCaseButton = document.getElementById('saveCaseButton');
 const printSingleButton = document.getElementById('printSingleButton');
@@ -74,7 +74,7 @@ const printComparisonButton = document.getElementById('printComparisonButton');
 const clearCasesButton = document.getElementById('clearCasesButton');
 
 
-// V3.0.6: Automatic Unit Conversion Logic
+// V6.2.1: Automatic Unit Conversion Logic
 let unitStateCache = { source: sourceUnit.value, sink: sinkUnit.value };
 sourceUnit.addEventListener('mousedown', () => { unitStateCache.source = sourceUnit.value; });
 sinkUnit.addEventListener('mousedown', () => { unitStateCache.sink = sinkUnit.value; });
@@ -89,7 +89,7 @@ sinkUnit.addEventListener('change', (e) => {
     unitStateCache.sink = newUnit;
 });
 
-// --- 辅助函数：UI 更新 (V6.0.0 MVR支持) ---
+// --- 辅助函数：UI 更新 (V6.2.1 MVR支持) ---
 function updateDynamicUI() {
     const mode = document.querySelector('input[name="calcMode"]:checked').value;
     const inputType = document.querySelector('input[name="inputType"]:checked').value;
@@ -195,7 +195,7 @@ function updateDynamicUI() {
     customCopGroup.classList.toggle('hidden', etaMode !== 'custom_cop');
 }
 
-// [V5.4.0] 替换此函数
+// [V6.2.1] 替换此函数
 function showMessage(message, isError = true, warnings = []) {
     resultsDiv.classList.remove('hidden');
     resultMessage.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700', 'bg-yellow-100', 'text-yellow-700', 'opacity-0');
@@ -213,7 +213,7 @@ function showMessage(message, isError = true, warnings = []) {
         resultData.classList.remove('hidden');
         resultMessage.classList.add('bg-green-100', 'text-green-700');
         
-        // --- NEW V5.4.0: 构建并插入警告 HTML ---
+        // --- NEW V6.2.1: 构建并插入警告 HTML ---
         let warningHtml = '';
         if (warnings && warnings.length > 0) {
             // 注意: Tailwind JIT 需要看到完整的类名，这里使用内联样式替代 bg-yellow-100 等
@@ -221,7 +221,7 @@ function showMessage(message, isError = true, warnings = []) {
                                <b>物理约束警告：</b><br>${warnings.join('<br>')}
                            </div>`;
         }
-        // --- End NEW V5.4.0 ---
+        // --- End NEW V6.2.1 ---
 
         resultMessage.innerHTML = `<span class="font-bold">计算成功：</span> ${message} ${warningHtml}`;
         resultActions.classList.remove('hidden');
@@ -242,9 +242,9 @@ function clearResultFields() {
     if (sinkSteamMakeupWaterGroup) sinkSteamMakeupWaterGroup.classList.add('hidden');
 }
 
-// [V5.4.0] 替换此函数
+// [V6.2.1] 替换此函数
 function displayResults(data) {
-    // V5.4.0: 将 data.warnings 传递给 showMessage
+    // V6.2.1: 将 data.warnings 传递给 showMessage
     showMessage(data.message, !data.feasibility, data.warnings || []);
     
     if (!data.feasibility) return;
@@ -280,10 +280,10 @@ function displayResults(data) {
         document.getElementById('resSinkParam2Label').textContent = '潜热负荷 (Q_lat)：';
         document.getElementById('resSinkParam2Value').textContent = kw(data.sink.qLatent);
         document.getElementById('resSinkParam3Label').textContent = '加湿/除湿水量：';
-        // --- V5.7.0 (Humidification Mod) ---
+        // --- V6.2.1 (Humidification Mod) ---
         // 确保正确显示加湿 (正) 或除湿 (负)
         document.getElementById('resSinkParam3Value').textContent = kg_h(data.sink.water_kg_h);
-        // --- V5.7.0 END ---
+        // --- V6.2.1 END ---
         document.getElementById('resSinkAirHumidPot').textContent = kg_h(data.sink.maxHumidPot_kg_h);
         document.getElementById('resSinkAirRHOut').textContent = percent(data.sink.rhOut_noHumid);
         document.getElementById('resSinkEnergyEvapCap').textContent = kg_h(data.sink.energyEvapCap_kg_h);
@@ -345,7 +345,7 @@ function handleUnitConversion(inputElement, fromUnit, toUnit, mediaType) {
 // --- 事件监听器 ---
 form.addEventListener('change', updateDynamicUI); 
 
-// (V5.1.1 修正版) - V5.8.0: 添加防抖优化
+// (V6.2.1 修正版) - V6.2.1: 添加防抖优化
 let inputDebounceTimer = null;
 form.addEventListener('input', () => {
     // 清除之前的定时器
@@ -364,14 +364,14 @@ form.addEventListener('input', () => {
             resultActions.classList.add('hidden');
             currentInputs = null;
             currentResult = null;
-            // NEW V5.2.0: Update button style on stale
+            // NEW V6.2.1: Update button style on stale
             calcButton.classList.remove('bg-[var(--color-action)]', 'hover:bg-orange-800');
             calcButton.classList.add('bg-yellow-500', 'hover:bg-yellow-600', 'animate-pulse');
         }
     }, 300);
 });
 
-// (V5.2.0 修正版)
+// (V6.2.1 修正版)
 resetButton.addEventListener('click', () => {
     form.reset();
     resultsDiv.classList.add('hidden');
@@ -379,7 +379,7 @@ resetButton.addEventListener('click', () => {
     resultData.classList.add('hidden');
     resultActions.classList.add('hidden');
     isResultStale = false;
-    // NEW V5.2.0: Restore correct button style on reset
+    // NEW V6.2.1: Restore correct button style on reset
     calcButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'animate-pulse');
     calcButton.classList.add('bg-[var(--color-action)]', 'hover:bg-orange-800'); 
     
@@ -404,7 +404,7 @@ printSingleButton.addEventListener('click', () => {
         return;
     }
     
-    // NEW V5.3.0: Generate report
+    // NEW V6.2.1: Generate report
     try {
         generatePrintReport(); // Populate the report container
         
@@ -427,10 +427,10 @@ printComparisonButton.addEventListener('click', printComparison);
 
 
 // --- K核心计算逻辑 ---
-// (V5.2.0 修正版)
+// (V6.2.1 修正版)
 function performCalculation() {
     isResultStale = false;
-    // NEW V5.2.0: Restore correct button style on calculate
+    // NEW V6.2.1: Restore correct button style on calculate
     calcButton.classList.remove('bg-yellow-500', 'hover:bg-yellow-600', 'animate-pulse');
     calcButton.classList.add('bg-[var(--color-action)]', 'hover:bg-orange-800');
     try {
@@ -528,9 +528,9 @@ function performCalculation() {
     }
 }
 
-// [V5.4.0] 替换此函数
-// --- V5.7.0 (Humidification Mod) START ---
-// MODIFIED V5.7.0: parseAndValidateInputs
+// [V6.2.1] 替换此函数
+// --- V6.2.1 (Humidification Mod) START ---
+// MODIFIED V6.2.1: parseAndValidateInputs
 function parseAndValidateInputs(p) {
     const errors = [];
     const warnings = []; 
@@ -544,7 +544,7 @@ function parseAndValidateInputs(p) {
         return num;
     };
     
-    // --- V5.7.0 (Humidification Mod) ---
+    // --- V6.2.1 (Humidification Mod) ---
     // 新增一个“宽松”解析器，允许空值
     const parseFloatOptional = (val, name, min = -Infinity, max = Infinity) => {
         if (val === null || String(val).trim() === '') { return null; } // 允许为空
@@ -552,7 +552,7 @@ function parseAndValidateInputs(p) {
         if (isNaN(num) || num < min || num > max) { errors.push(`${name} (选填) 必须是有效数字 (范围 ${min} ~ ${max})。`); return NaN; }
         return num;
     };
-    // --- V5.7.0 END ---
+    // --- V6.2.1 END ---
 
     inputs.source.type = p.sourceType;
     
@@ -608,10 +608,10 @@ function parseAndValidateInputs(p) {
              inputs.sink.pressure = parseFloatStrict(p.sinkAirPressure, "热汇·空气压力", true, 0.1, 20);
              inputs.sink.rh = parseFloatStrict(p.sinkAirRH, "热汇·(进口)相对湿度", true, 0, 100);
              
-             // --- V5.7.0 (Humidification Mod) START ---
+             // --- V6.2.1 (Humidification Mod) START ---
              // 读取假设的 "sinkAirRHOut" (目标出口RH)
              inputs.sink.rhOut = parseFloatOptional(p.sinkAirRHOut, "热汇·目标相对湿度", 0, 100);
-             // --- V5.7.0 END ---
+             // --- V6.2.1 END ---
 
              if (!isNaN(inputs.sink.tempIn) && !isNaN(inputs.sink.pressure) && !isNaN(inputs.sink.rh)) {
                 const P_abs = inputs.sink.pressure * 100000;
@@ -624,7 +624,7 @@ function parseAndValidateInputs(p) {
                 }
             }
              
-            // --- V5.7.0 (Humidification Mod) START ---
+            // --- V6.2.1 (Humidification Mod) START ---
             // 同样检查出口RH的物理极限
             if (inputs.sink.rhOut !== null && !isNaN(inputs.sink.rhOut) && !isNaN(inputs.sink.tempOut) && !isNaN(inputs.sink.pressure)) {
                 const P_abs = inputs.sink.pressure * 100000;
@@ -637,7 +637,7 @@ function parseAndValidateInputs(p) {
                     }
                 }
             }
-             // --- V5.7.0 END ---
+             // --- V6.2.1 END ---
         }
     }
     
@@ -703,12 +703,12 @@ function parseAndValidateInputs(p) {
     if (errors.length > 0) throw new Error(errors.join('<br>'));
     return inputs;
 }
-// --- V5.7.0 END ---
+// --- V6.2.1 END ---
 
 
-// --- MODIFIED V5.5.0: 核心计算逻辑 ---
-// --- V5.7.0 (Humidification Mod) START ---
-// MODIFIED V5.7.0: calculateFlowFromLoad
+// --- MODIFIED V6.2.1: 核心计算逻辑 ---
+// --- V6.2.1 (Humidification Mod) START ---
+// MODIFIED V6.2.1: calculateFlowFromLoad
 function calculateFlowFromLoad(params, q_kW, isSource) {
     if (!q_kW || q_kW <= 0) throw new Error("用于反算流量的负荷无效。");
     if (params.type === 'water') {
@@ -719,11 +719,11 @@ function calculateFlowFromLoad(params, q_kW, isSource) {
         return { flow: flow_t_h, unit: "t/h" };
     } 
     else if (params.type === 'air') {
-        // V5.5.0: 使用高精度模型
+        // V6.2.1: 使用高精度模型
         const W_in = getHumidityRatio(params.pressure, params.tempIn, params.rh);
         const h_in = getAirEnthalpy(params.tempIn, W_in);
         
-        // --- V5.7.0 (Humidification Mod) START ---
+        // --- V6.2.1 (Humidification Mod) START ---
         let W_out = W_in; // 默认 W 不变
         if (isSource && params.tempOut < getDewPoint(params.tempIn, params.rh, params.pressure)) { 
             // 冷却除湿
@@ -738,21 +738,21 @@ function calculateFlowFromLoad(params, q_kW, isSource) {
                  // 纯加热 (W_out 保持 W_in)
              }
         }
-        // --- V5.7.0 END ---
+        // --- V6.2.1 END ---
         
         const h_out = getAirEnthalpy(params.tempOut, W_out);
         const delta_h = isSource ? h_in - h_out : h_out - h_in;
         
         if(delta_h === 0) throw new Error(isSource ? "热源空气焓差为0，无法反算流量。" : "热汇空气焓差为0，无法反算流量。");
-        // --- V5.7.0 (Humidification Mod) 允许 delta_h < 0 (例如，在加热时进行强力除湿)
+        // --- V6.2.1 (Humidification Mod) 允许 delta_h < 0 (例如，在加热时进行强力除湿)
         if (isSource && delta_h <= 0) throw new Error("热源空气焓差必须大于0。");
         if (!isSource && delta_h <= 0) throw new Error("热汇空气总焓变必须大于0 (加热或加湿)。");
-        // --- V5.7.0 END ---
+        // --- V6.2.1 END ---
 
         const mass_kg_s = q_kW / delta_h; // 此处 mass_kg_s 是干空气质量
         const density = getAirDensity(params.pressure, params.tempIn, params.rh); 
         
-        // --- V5.7.0 (Humidification Mod) START ---
+        // --- V6.2.1 (Humidification Mod) START ---
         // 修正：mass_kg_s 应该是干空气质量，但 q_kW / delta_h 已经是干空气质量
         // h_in 和 h_out 是 (kJ/kg dry air)
         // 所以 mass_kg_s = q_kW / delta_h 得到的单位是 (kg dry air / s)
@@ -760,7 +760,7 @@ function calculateFlowFromLoad(params, q_kW, isSource) {
         // 转换为湿空气的 *进口* 体积流量
         const mass_moist_air_kg_s = mass_dry_air_kg_s * (1 + W_in);
         const flow_m3_h = (mass_moist_air_kg_s * 3600) / density;
-        // --- V5.7.0 END ---
+        // --- V6.2.1 END ---
         
         return { flow: flow_m3_h, unit: "m³/h" };
     }
@@ -781,14 +781,14 @@ function calculateFlowFromLoad(params, q_kW, isSource) {
     }
     throw new Error("无法计算流量：未知的介质类型或配置。");
 }
-// --- V5.7.0 END ---
+// --- V6.2.1 END ---
 
 
-// --- MODIFIED V5.6.0: 显热/潜热定义变更 ---
-// --- V5.7.0 (Humidification Mod) START ---
-// MODIFIED V5.7.0: calculateLoad
+// --- MODIFIED V6.2.1: 显热/潜热定义变更 ---
+// --- V6.2.1 (Humidification Mod) START ---
+// MODIFIED V6.2.1: calculateLoad
 function calculateLoad(params, hasKnownFlow, isSource) {
-    // --- V5.7.0 修正：mass_kg_s 统一为 (kg dry air / s)
+    // --- V6.2.1 修正：mass_kg_s 统一为 (kg dry air / s)
     let result = { type: params.type, mass_dry_air_kg_s: NaN, q_kW: NaN, qSensible: NaN, qLatent: NaN, water_kg_h: 0 };
     const flow = hasKnownFlow ? params.flow : NaN;
     const unit = params.unit;
@@ -810,7 +810,7 @@ function calculateLoad(params, hasKnownFlow, isSource) {
         const W_in = getHumidityRatio(params.pressure, params.tempIn, params.rh);
         const h_in = getAirEnthalpy(params.tempIn, W_in);
         
-        // --- V5.7.0 (Humidification Mod) START ---
+        // --- V6.2.1 (Humidification Mod) START ---
         let W_out = W_in; // 默认 W 不变
         if (isSource && params.tempOut < getDewPoint(params.tempIn, params.rh, params.pressure)) { 
             // 冷却除湿
@@ -825,7 +825,7 @@ function calculateLoad(params, hasKnownFlow, isSource) {
                  // 纯加热 (W_out 保持 W_in)
              }
         }
-        // --- V5.7.0 END ---
+        // --- V6.2.1 END ---
 
         const h_out = getAirEnthalpy(params.tempOut, W_out);
         const delta_h = isSource ? h_in - h_out : h_out - h_in;
@@ -841,10 +841,10 @@ function calculateLoad(params, hasKnownFlow, isSource) {
             // 转换为干空气质量 (kg dry air / s)
             result.mass_dry_air_kg_s = mass_moist_kg_s / (1 + W_in);
             
-            // 总负荷 (V5.5.0 精度)
+            // 总负荷 (V6.2.1 精度)
             result.q_kW = result.mass_dry_air_kg_s * delta_h;
             
-            // --- V5.6.0: 显热/潜热分离 (Munters 定义) ---
+            // --- V6.2.1: 显热/潜热分离 (Munters 定义) ---
             // qSensible = 干空气显热
             // qLatent = 湿气负荷 (水蒸气显热 + 相变潜热)
             
@@ -857,14 +857,14 @@ function calculateLoad(params, hasKnownFlow, isSource) {
             const delta_h_dry_air = h_dry_air_out - h_dry_air_in; // 符号保持一致
 
             // 3. 计算干空气显热负荷
-            // --- V5.7.0 修正：使用 Math.abs(delta_h) 而不是 delta_h
+            // --- V6.2.1 修正：使用 Math.abs(delta_h) 而不是 delta_h
             result.qSensible = mass_dry_air_kg_s * Math.abs(delta_h_dry_air);
             
             // 4. 潜热 = 总负荷 - 干空气显热
             result.qLatent = result.q_kW - result.qSensible;
-            // --- END V5.6.0 ---
+            // --- END V6.2.1 ---
             
-            // --- V5.7.0 修正：water_kg_h 的符号
+            // --- V6.2.1 修正：water_kg_h 的符号
             // (W_out - W_in) * mass_dry * 3600
             // W_out > W_in (加湿) -> water_kg_h 为正
             // W_out < W_in (除湿) -> water_kg_h 为负
@@ -876,8 +876,8 @@ function calculateLoad(params, hasKnownFlow, isSource) {
             // 重新校验 qLatent
             if (result.qLatent < 0 && result.q_kW > 0) { 
                  console.warn(`Negative latent heat (${result.qLatent} kW) calculated for ${isSource ? 'source' : 'sink'}. Resetting. Q_sensible adjusted.`);
-                 // (V5.7.0: 这种 Q_lat < 0 的情况是可能的，例如强力除湿同时加热，暂时保留)
-                 // V5.6.0 的重置逻辑在 V5.7.0 中可能不适用
+                 // (V6.2.1: 这种 Q_lat < 0 的情况是可能的，例如强力除湿同时加热，暂时保留)
+                 // V6.2.1 的重置逻辑在 V6.2.1 中可能不适用
                  // result.qSensible = result.q_kW; result.qLatent = 0; result.water_kg_h = 0;
             }
         }
@@ -912,10 +912,10 @@ function calculateLoad(params, hasKnownFlow, isSource) {
     }
     return result;
 }
-// --- V5.7.0 END ---
+// --- V6.2.1 END ---
 
 
-// [V5.4.0] 替换此函数
+// [V6.2.1] 替换此函数
 function calculateMatch(inputs, sourceResult, sinkResult) {
     const { source, sink, eta, minTempApproach, steamTempApproach, mode, inputType } = inputs;
     let qCold_kW, qHot_kW, W_kW, copActual, etaActual;
@@ -972,23 +972,23 @@ function calculateMatch(inputs, sourceResult, sinkResult) {
         finalSinkFlow = dFlow; finalSinkFlowUnit = dUnit;
     }
     
-    // V5.7.0: {...source} 和 {...sink} 会自动包含 sink.rhOut
+    // V6.2.1: {...source} 和 {...sink} 会自动包含 sink.rhOut
     finalSource = calculateLoad({...source, flow: finalSourceFlow, unit: finalSourceFlowUnit}, true, true);
     finalSink = calculateLoad({...sink, flow: finalSinkFlow, unit: finalSinkFlowUnit}, true, false);
     
-    // V5.5.0: 附加空气参数计算 (干燥/加湿)
+    // V6.2.1: 附加空气参数计算 (干燥/加湿)
     if (sink.type === 'air') {
         try {
             const W_in_sink = getHumidityRatio(sink.pressure, sink.tempIn, sink.rh);
             const W_out_sat_sink = getHumidityRatio(sink.pressure, sink.tempOut, 100);
              
-            // --- V5.7.0 (Humidification Mod) START ---
-             // 修正：finalSink.mass_dry_air_kg_s 是 V5.7.0 中 calculateLoad 返回的新属性
+            // --- V6.2.1 (Humidification Mod) START ---
+             // 修正：finalSink.mass_dry_air_kg_s 是 V6.2.1 中 calculateLoad 返回的新属性
              if (isNaN(finalSink.mass_dry_air_kg_s) || finalSink.mass_dry_air_kg_s <= 0) {
                throw new Error("无法计算干空气质量流量 (mass_dry_air_kg_s invalid)。")
             }
             const mass_dry_air_kg_s_sink = finalSink.mass_dry_air_kg_s;
-            // --- V5.7.0 END ---
+            // --- V6.2.1 END ---
             
             maxHumidPot_kg_h = mass_dry_air_kg_s_sink * (W_out_sat_sink - W_in_sink) * 3600;
             maxHumidPot_kg_h = Math.max(0, maxHumidPot_kg_h); 
@@ -1004,7 +1004,7 @@ function calculateMatch(inputs, sourceResult, sinkResult) {
                  rhOut_noHumid = Math.max(0, Math.min(100, rhOut_noHumid)); 
             } else { rhOut_noHumid = 0; }
             
-            // V5.5.0: 使用高精度汽化潜热
+            // V6.2.1: 使用高精度汽化潜热
             const h_latent_at_T_out = getVaporEnthalpy_HighAccuracy(sink.tempOut) - (CP_WATER * sink.tempOut); // 粗略估算
             
             if (h_latent_at_T_out > 0) {
@@ -1024,14 +1024,14 @@ function calculateMatch(inputs, sourceResult, sinkResult) {
                 rhOut_afterHumid = Math.max(0, Math.min(100, rhOut_afterHumid));
             } else { rhOut_afterHumid = 0; }
 
-            // --- V5.7.0 (Humidification Mod) START ---
+            // --- V6.2.1 (Humidification Mod) START ---
             // 如果用户指定了 rhOut，rhOut_noHumid 字段应显示实际的目标 RH (如果提供了)
             // 否则显示 纯加热 后的 RH
             if (sink.rhOut !== null && typeof sink.rhOut !== 'undefined') {
-                rhOut_noHumid = sink.rhOut; // V5.7.0: 重用此字段
+                rhOut_noHumid = sink.rhOut; // V6.2.1: 重用此字段
                 // (注意：这会使 "加热后RH(无加湿)" 的标签在语义上不完全准确，但这是重用字段的最快方法)
             }
-            // --- V5.7.0 END ---
+            // --- V6.2.1 END ---
 
         } catch (airCalcError) {
             console.error("Error calculating additional air sink parameters:", airCalcError);
@@ -1050,7 +1050,7 @@ function calculateMatch(inputs, sourceResult, sinkResult) {
 }
 
 
-// --- NEW V5.3.0: Report Generation ---
+// --- NEW V6.2.1: Report Generation ---
 function generatePrintReport() {
     const container = document.getElementById('printReportContainer');
     if (!container || !currentInputs || !currentResult) {
@@ -1088,12 +1088,12 @@ function generatePrintReport() {
     
     const feasibilityClass = r.feasibility ? 'res-feasibility-ok' : 'res-feasibility-fail';
     
-    // --- V5.7.0 (Humidification Mod) START ---
+    // --- V6.2.1 (Humidification Mod) START ---
     // 检查是否提供了 rhOut
     const sinkAirRHOut_HTML = (i.sink.type === 'air' && i.sink.rhOut !== null && typeof i.sink.rhOut !== 'undefined') 
         ? `<div><dt>热汇·目标RH：</dt><dd>${percent(i.sink.rhOut)}</dd></div>` 
         : '';
-    // --- V5.7.0 END ---
+    // --- V6.2.1 END ---
 
     let html = `
         <h1>工业热泵匹配计算报告</h1>
@@ -1230,7 +1230,7 @@ function generatePrintReport() {
     container.innerHTML = html;
 }
 
-// --- NEW V5.1.0: 暂存和对比功能函数 ---
+// --- NEW V6.2.1: 暂存和对比功能函数 ---
 
 function saveCurrentCase() {
     if (!currentInputs || !currentResult) {
@@ -1249,7 +1249,7 @@ function saveCurrentCase() {
     showToast(`方案 ${comparisonCases.length} 已暂存`, 'success');
 }
 
-// (V5.1.2 修正版)
+// (V6.2.1 修正版)
 function renderComparisonTable() {
     if (comparisonCases.length === 0) {
         comparisonSection.classList.add('hidden');
@@ -1307,7 +1307,7 @@ function renderComparisonTable() {
     comparisonTableContainer.innerHTML = tableHtml;
 }
 
-// (V5.1.3 修正版)
+// (V6.2.1 修正版)
 function clearComparison() {
     const clearAction = () => {
         const count = comparisonCases.length;
@@ -1347,7 +1347,7 @@ function printComparison() {
     }, 500); 
 }
 
-// --- V5.8.0: UI/UX 升级功能 ---
+// --- V6.2.1: UI/UX 升级功能 ---
 
 // Toast通知功能
 function showToast(message, type = 'info', duration = 3000) {
@@ -2226,4 +2226,4 @@ setupFieldValidation();
 setupKeyboardShortcuts();
 
 // 更新版本号
-console.log("工业热泵匹配计算器 V6.0.0 初始化完成。");
+console.log("工业热泵匹配计算器 V6.2.1 初始化完成。");

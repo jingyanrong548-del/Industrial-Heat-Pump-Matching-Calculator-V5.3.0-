@@ -1,69 +1,71 @@
-/* V6.0.0: 专业工程风格色彩系统 */
+/* V6.2.1: Notion风格色彩系统 */
 :root { 
-    /* 主色调 - 深蓝灰色系（专业、稳重） */
-    --color-primary: #1e293b;      /* slate-800 - 深蓝灰主色 */
-    --color-primary-dark: #0f172a; /* slate-900 - 更深的主色 */
-    --color-primary-light: #334155; /* slate-700 - 浅主色 */
+    /* 主色调 */
+    --color-primary: #37352f;      /* Notion主文本色 */
+    --color-primary-dark: #2e2e2e; 
+    --color-primary-light: #787774; 
     
-    /* 头部和强调色 - 暖色调 */
-    --color-header: #c2410c;       /* orange-700 - 暖色调头部 */
-    --color-header-gradient-start: #ea580c; /* orange-600 */
-    --color-header-gradient-end: #c2410c;   /* orange-700 */
+    /* 头部和强调色 */
+    --color-header: #3b82f6;       /* 蓝色头部 */
+    --color-header-gradient-start: #3b82f6;
+    --color-header-gradient-end: #2563eb;
     
     /* 操作和强调色 */
-    --color-action: #f97316;      /* orange-500 - 橙色操作按钮 */
-    --color-action-hover: #ea580c; /* orange-600 - 悬停状态 */
-    --color-action-active: #c2410c; /* orange-700 - 激活状态 */
+    --color-action: #3b82f6;      /* 蓝色操作按钮 */
+    --color-action-hover: #2563eb;
+    --color-action-active: #1d4ed8;
     
     /* 功能色 */
-    --color-source: #3b82f6;      /* blue-500 - 热源（信息色） */
-    --color-source-light: #dbeafe; /* blue-100 - 热源背景 */
-    --color-source-dark: #2563eb;   /* blue-600 - 热源深色 */
+    --color-source: #3b82f6;      /* 蓝色 - 热源 */
+    --color-source-light: #dbeafe; 
+    --color-source-dark: #2563eb;
     
-    --color-sink: #ef4444;       /* red-500 - 热汇（警告色） */
-    --color-sink-light: #fee2e2; /* red-100 - 热汇背景 */
-    --color-sink-dark: #dc2626;  /* red-600 - 热汇深色 */
+    --color-sink: #ef4444;       /* 红色 - 热汇 */
+    --color-sink-light: #fee2e2;
+    --color-sink-dark: #dc2626;
     
-    --color-success: #10b981;    /* emerald-500 - 成功/绿色 */
-    --color-success-light: #d1fae5; /* emerald-100 */
-    --color-success-dark: #059669;  /* emerald-600 */
+    --color-success: #10b981;    /* 绿色 - 成功 */
+    --color-success-light: #d1fae5;
+    --color-success-dark: #059669;
     
-    --color-warning: #f59e0b;    /* amber-500 - 警告色 */
-    --color-warning-light: #fef3c7; /* amber-100 */
+    --color-warning: #f59e0b;    /* 橙色 - 警告 */
+    --color-warning-light: #fef3c7;
+    --color-warning-dark: #d97706; /* 深橙色 */
     
-    --color-neutral: #64748b;    /* slate-500 - 中性色 */
-    --color-neutral-light: #f1f5f9; /* slate-100 */
-    --color-neutral-dark: #475569;  /* slate-600 */
+    --color-neutral: #64748b;    /* 中性色 */
+    --color-neutral-light: #f1f5f9;
+    --color-neutral-dark: #475569;
     
-    /* 背景色 */
+    /* 背景色 - Notion风格浅色系 */
     --color-bg-primary: #ffffff;
-    --color-bg-secondary: #f8fafc; /* slate-50 - 次要背景 */
-    --color-bg-tertiary: #f1f5f9;   /* slate-100 - 第三背景 */
-    --color-bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    --color-bg-secondary: #f7f6f3; /* Notion浅灰背景 */
+    --color-bg-tertiary: #fafafa;
+    --color-bg-gradient: #f7f6f3; /* Notion背景色 */
     
-    /* 文本色 */
-    --color-text-primary: #0f172a;   /* slate-900 - 主文本 */
-    --color-text-secondary: #475569; /* slate-600 - 次要文本 */
-    --color-text-muted: #94a3b8;     /* slate-400 - 弱文本 */
+    /* 文本色 - Notion风格深色文本 */
+    --color-text-primary: #37352f;   /* Notion主文本色 */
+    --color-text-secondary: #787774; /* Notion次要文本 */
+    --color-text-muted: #9b9a97;     /* Notion弱文本 */
     --color-text-inverse: #ffffff;    /* 反色文本 */
     
-    /* 边框色 */
-    --color-border: #cbd5e1;     /* slate-300 */
-    --color-border-light: #e2e8f0; /* slate-200 */
-    --color-border-dark: #94a3b8;  /* slate-400 */
+    /* 边框色 - Notion风格 */
+    --color-border: #e5e7eb;
+    --color-border-light: #f3f4f6;
+    --color-border-dark: #d1d5db;
     
-    /* 阴影系统 */
-    --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
-    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
-    --shadow-inner: inset 0 2px 4px 0 rgba(15, 23, 42, 0.06);
+    /* 阴影系统 - Notion风格轻微阴影 */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-xl: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
     
-    /* 圆角 */
+    /* 圆角 - Notion风格 */
     --radius-sm: 0.25rem;
     --radius-md: 0.375rem;
     --radius-lg: 0.5rem;
     --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
     --radius-full: 9999px;
     
     /* 过渡动画 */
@@ -75,7 +77,15 @@ body {
     font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     scroll-behavior: smooth;
     background: var(--color-bg-gradient);
+    min-height: 100vh;
     color: var(--color-text-primary);
+    position: relative;
+}
+
+/* 移除所有装饰性背景 */
+body::before,
+body::after {
+    display: none;
 }
 /* 加深了边框颜色 */
 fieldset { border-color: #d1d5db; border-width: 1px; }
@@ -97,7 +107,7 @@ legend.text-perf { color: var(--color-neutral); }
     position: relative;
     z-index: 5;
     transition: all var(--transition-base);
-    border: 2px solid var(--color-border);
+    border: 1px solid var(--color-border-dark);
     border-radius: var(--radius-md);
     background: var(--color-bg-primary);
     color: var(--color-text-primary);
@@ -108,8 +118,7 @@ legend.text-perf { color: var(--color-neutral); }
 .input-field:focus {
     outline: none;
     border-color: var(--color-action);
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .input-field:hover:not(:focus) {
@@ -138,8 +147,8 @@ legend.text-perf { color: var(--color-neutral); }
     color: var(--color-text-secondary); 
     font-size: 0.875rem; 
     font-weight: 500;
-    border-left: 2px solid var(--color-border); 
-    background: linear-gradient(to right, var(--color-bg-tertiary), var(--color-bg-secondary));
+    border-left: 1px solid var(--color-border); 
+    background: var(--color-bg-secondary);
     border-top-right-radius: var(--radius-md); 
     border-bottom-right-radius: var(--radius-md); 
     z-index: 15;
@@ -159,7 +168,7 @@ legend.text-perf { color: var(--color-neutral); }
     right: 0; 
     top: 0; 
     height: 100%; 
-    border: 2px solid var(--color-border);
+    border: 1px solid var(--color-border-dark);
     border-left: none;
     border-top-left-radius: 0; 
     border-bottom-left-radius: 0; 
@@ -176,117 +185,108 @@ legend.text-perf { color: var(--color-neutral); }
 
 .input-unit-select:hover {
     background: var(--color-bg-tertiary);
+    border-color: var(--color-border-dark);
 }
 
 .input-unit-select:focus {
     outline: none;
-    background: var(--color-bg-primary);
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+    border-color: var(--color-action);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 /* 按钮样式重构 */
 button {
     font-family: inherit;
-    font-weight: 600;
-    letter-spacing: 0.025em;
+    font-weight: 500;
+    letter-spacing: 0.01em;
     transition: all var(--transition-base);
     cursor: pointer;
     border: none;
     outline: none;
-    position: relative;
-    overflow: hidden;
-}
-
-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left var(--transition-slow);
-}
-
-button:hover::before {
-    left: 100%;
 }
 
 button:active {
-    transform: translateY(1px);
+    transform: scale(0.98);
 }
 
-/* 主要操作按钮 */
+/* 主要操作按钮 - Notion风格 */
 button[type="button"]#calcButton,
 button.bg-\[var\(--color-action\)\] {
-    background: linear-gradient(135deg, var(--color-action) 0%, var(--color-action-hover) 100%);
+    background: var(--color-action);
+    border: none;
     color: var(--color-text-inverse);
     padding: 0.875rem 1.5rem;
-    border-radius: var(--radius-lg);
-    box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.3), 0 2px 4px -1px rgba(249, 115, 22, 0.2);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     font-size: 1rem;
+    font-weight: 500;
     min-height: 48px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    transition: all var(--transition-base);
 }
 
 button[type="button"]#calcButton:hover,
 button.bg-\[var\(--color-action\)\]:hover {
-    background: linear-gradient(135deg, var(--color-action-hover) 0%, var(--color-action-active) 100%);
-    box-shadow: 0 6px 12px -2px rgba(249, 115, 22, 0.4), 0 4px 6px -2px rgba(249, 115, 22, 0.3);
-    transform: translateY(-2px);
+    background: var(--color-action-hover);
+    box-shadow: var(--shadow-md);
 }
 
 button[type="button"]#calcButton:active,
 button.bg-\[var\(--color-action\)\]:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px -1px rgba(249, 115, 22, 0.3);
+    background: var(--color-action-active);
+    box-shadow: var(--shadow-sm);
 }
 
-/* 重置按钮 */
+/* 重置按钮 - Notion风格 */
 button[type="button"]#resetButton,
 button.bg-gray-500 {
-    background: linear-gradient(135deg, var(--color-neutral) 0%, var(--color-neutral-dark) 100%);
-    color: var(--color-text-inverse);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-primary);
     padding: 0.875rem 1.5rem;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     font-size: 1rem;
+    font-weight: 500;
     min-height: 48px;
+    transition: all var(--transition-base);
 }
 
 button[type="button"]#resetButton:hover,
 button.bg-gray-500:hover {
-    background: linear-gradient(135deg, var(--color-neutral-dark) 0%, var(--color-primary) 100%);
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border-dark);
+    box-shadow: var(--shadow-md);
 }
 
-/* 成功按钮 */
+/* 成功按钮 - Notion风格 */
 button.bg-green-600 {
-    background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
+    background: var(--color-success);
+    border: none;
     color: var(--color-text-inverse);
-    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
 }
 
 button.bg-green-600:hover {
-    background: linear-gradient(135deg, var(--color-success-dark) 0%, #047857 100%);
-    box-shadow: 0 6px 12px -2px rgba(16, 185, 129, 0.4);
-    transform: translateY(-2px);
+    background: var(--color-success-dark);
+    box-shadow: var(--shadow-md);
 }
 
-/* 危险按钮 */
+/* 危险按钮 - Notion风格 */
 button.bg-red-600 {
-    background: linear-gradient(135deg, var(--color-sink) 0%, var(--color-sink-dark) 100%);
+    background: var(--color-sink);
+    border: none;
     color: var(--color-text-inverse);
-    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
 }
 
 button.bg-red-600:hover {
-    background: linear-gradient(135deg, var(--color-sink-dark) 0%, #b91c1c 100%);
-    box-shadow: 0 6px 12px -2px rgba(239, 68, 68, 0.4);
-    transform: translateY(-2px);
+    background: var(--color-sink-dark);
+    box-shadow: var(--shadow-md);
 }
 
 /* Radio按钮组 */
@@ -306,12 +306,12 @@ button.bg-red-600:hover {
     flex: 1; 
     display: inline-block; 
     padding: 0.875rem 1.25rem; 
-    border: 2px solid var(--color-border); 
+    border: 1px solid var(--color-border); 
     border-right-width: 0;
     cursor: pointer; 
     transition: all var(--transition-base); 
     background: var(--color-bg-primary);
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
     font-size: 0.875rem; 
     font-weight: 500;
     text-align: center;
@@ -335,8 +335,8 @@ button.bg-red-600:hover {
 .radio-group label:hover {
     background: var(--color-bg-secondary);
     color: var(--color-text-primary);
-    transform: translateY(-1px);
     z-index: 1;
+    border-color: var(--color-border-dark);
 }
 
 .radio-group label:active {
@@ -344,18 +344,94 @@ button.bg-red-600:hover {
 }
 
 .radio-group input[type="radio"]:checked + label { 
-    background: linear-gradient(135deg, var(--color-action) 0%, var(--color-action-hover) 100%);
+    background: var(--color-action);
     color: var(--color-text-inverse); 
     border-color: var(--color-action); 
-    box-shadow: var(--shadow-md); 
+    box-shadow: var(--shadow-sm);
     z-index: 2;
     font-weight: 600;
 }
-/* Label style */
+
+/* 计算基准按钮颜色主题 - 根据计算模式动态切换 */
+/* 已知热源模式 - 冷色主题（蓝色系） */
+body.mode-source-active #inputTypeRadios label {
+    background: var(--color-source-light) !important;
+    border-color: var(--color-source) !important;
+    color: var(--color-source-dark) !important;
+}
+
+body.mode-source-active #inputTypeRadios label:hover {
+    background: var(--color-source) !important;
+    border-color: var(--color-source-dark) !important;
+    color: white !important;
+    z-index: 1;
+}
+
+body.mode-source-active #inputTypeRadios input[type="radio"]:checked + label {
+    background: var(--color-source) !important;
+    border-color: var(--color-source-dark) !important;
+    color: white !important;
+    box-shadow: var(--shadow-sm);
+    z-index: 2;
+    font-weight: 600;
+}
+
+/* 已知热汇模式 - 暖色主题（红色系，与已知热汇按钮颜色一致） */
+body:not(.mode-source-active) #inputTypeRadios label {
+    background: var(--color-sink-light) !important;
+    border-color: var(--color-sink) !important;
+    border-left-color: var(--color-sink) !important;
+    border-right-color: var(--color-sink) !important;
+    border-top-color: var(--color-sink) !important;
+    border-bottom-color: var(--color-sink) !important;
+    color: var(--color-sink-dark) !important; /* 深红色文字，确保在浅红色背景上可读 */
+}
+
+body:not(.mode-source-active) #inputTypeRadios label:first-of-type {
+    border-left-color: var(--color-sink) !important;
+}
+
+body:not(.mode-source-active) #inputTypeRadios label:last-of-type {
+    border-right-color: var(--color-sink) !important;
+}
+
+body:not(.mode-source-active) #inputTypeRadios label:hover {
+    background: var(--color-sink) !important;
+    border-color: var(--color-sink-dark) !important;
+    border-left-color: var(--color-sink-dark) !important;
+    border-right-color: var(--color-sink-dark) !important;
+    border-top-color: var(--color-sink-dark) !important;
+    border-bottom-color: var(--color-sink-dark) !important;
+    color: white !important;
+    z-index: 1;
+}
+
+body:not(.mode-source-active) #inputTypeRadios input[type="radio"]:checked + label {
+    background: var(--color-sink) !important;
+    border-color: var(--color-sink-dark) !important;
+    border-left-color: var(--color-sink-dark) !important;
+    border-right-color: var(--color-sink-dark) !important;
+    border-top-color: var(--color-sink-dark) !important;
+    border-bottom-color: var(--color-sink-dark) !important;
+    color: white !important;
+    box-shadow: var(--shadow-sm) !important;
+    z-index: 2;
+    font-weight: 600;
+}
+
+body:not(.mode-source-active) #inputTypeRadios input[type="radio"]:checked + label:first-of-type {
+    border-left-color: var(--color-sink-dark) !important;
+}
+
+body:not(.mode-source-active) #inputTypeRadios input[type="radio"]:checked + label:last-of-type {
+    border-right-color: var(--color-sink-dark) !important;
+}
+
+/* Label style - Notion风格 */
 .input-label {
     display: block;
     font-size: 0.875rem;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--color-text-primary);
     margin-bottom: 0.5rem;
     letter-spacing: 0.01em;
@@ -365,7 +441,7 @@ select option:disabled {
     color: #9ca3af;
 }
 
-/* 方案对比表格优化 */
+/* 方案对比表格优化 - Notion风格 */
 .comparison-table {
     width: 100%;
     border-collapse: separate;
@@ -376,12 +452,14 @@ select option:disabled {
     background: var(--color-bg-primary);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-border);
 }
 
 .comparison-table thead {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-    color: var(--color-text-inverse);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .comparison-table th {
@@ -402,13 +480,13 @@ select option:disabled {
     top: 20%;
     bottom: 20%;
     width: 1px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-border);
 }
 
 .comparison-table tbody tr {
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border);
     transition: all var(--transition-fast);
-    background: var(--color-bg-primary);
+    background: transparent;
 }
 
 .comparison-table tbody tr:last-child {
@@ -421,17 +499,14 @@ select option:disabled {
 
 .comparison-table tbody tr:hover {
     background: var(--color-bg-tertiary);
-    transform: scale(1.01);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 1;
-    position: relative;
+    box-shadow: var(--shadow-sm);
 }
 
 .comparison-table td {
     padding: 1rem 1.25rem;
     vertical-align: middle;
     white-space: nowrap;
-    border-right: 1px solid var(--color-border-light);
+    border-right: 1px solid var(--color-border);
 }
 
 .comparison-table td:last-child {
@@ -441,7 +516,7 @@ select option:disabled {
 .comparison-table td.param-output {
     font-weight: 600;
     color: var(--color-text-primary);
-    background: var(--color-bg-tertiary);
+    background: var(--color-bg-secondary);
 }
 
 .comparison-table td.param-qhot {
@@ -459,55 +534,71 @@ select option:disabled {
 .comparison-table-container {
     border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: var(--shadow-lg);
-    background: var(--color-bg-primary);
+    box-shadow: var(--shadow-sm);
+    background: transparent;
 }
 
-/* --- V6.0.0: 计算模式和基准按钮颜色主题 --- */
+/* --- V6.1.0: 计算模式和基准按钮颜色主题 --- */
 
-/* 已知热源模式按钮 - 始终蓝色 */
+/* 已知热源模式按钮 - 始终蓝色 - Notion风格 */
 #calcModeRadios input#mode_source:checked + label {
-    background: linear-gradient(135deg, var(--color-source) 0%, var(--color-source-dark) 100%) !important;
+    background: var(--color-source) !important;
     border-color: var(--color-source) !important;
     color: white !important;
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2) !important;
+    box-shadow: var(--shadow-sm) !important;
     font-weight: 600;
 }
 
-/* 已知热汇模式按钮 - 暖色调（红色） */
+/* 已知热汇模式按钮 - 暖色调（红色） - Notion风格 */
 #calcModeRadios input#mode_sink:checked + label {
-    background: linear-gradient(135deg, var(--color-sink) 0%, var(--color-sink-dark) 100%) !important;
+    background: var(--color-sink) !important;
     border-color: var(--color-sink) !important;
     color: white !important;
-    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3), 0 2px 4px -1px rgba(239, 68, 68, 0.2) !important;
+    box-shadow: var(--shadow-sm) !important;
     font-weight: 600;
 }
 
-/* 当选择"已知热源"时，计算基准按钮选中时显示蓝色 */
-body.mode-source-active #inputTypeRadios input[type="radio"]:checked + label {
-    background: linear-gradient(135deg, var(--color-source) 0%, var(--color-source-dark) 100%) !important;
-    border-color: var(--color-source) !important;
-    color: white !important;
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2) !important;
+/* 覆盖Tailwind背景类为玻璃屏效果 */
+#resultData .bg-gray-50,
+#resultData .bg-blue-50,
+#resultData .bg-red-50 {
+    background: var(--color-bg-primary) !important;
+    border: 1px solid var(--color-border) !important;
+}
+
+#resultData .bg-white {
+    background: var(--color-bg-primary) !important;
+    border: 1px solid var(--color-border) !important;
+}
+
+#resultData .bg-gray-50 h3,
+#resultData .bg-blue-50 h3,
+#resultData .bg-red-50 h3 {
+    color: var(--color-text-primary) !important;
     font-weight: 600;
 }
 
-/* 当选择"已知热汇"时，计算基准按钮选中时显示暖色调（橙色） */
-body:not(.mode-source-active) #inputTypeRadios input[type="radio"]:checked + label {
-    background: linear-gradient(135deg, var(--color-action) 0%, var(--color-action-hover) 100%) !important;
-    border-color: var(--color-action) !important;
-    color: white !important;
-    box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.3), 0 2px 4px -1px rgba(249, 115, 22, 0.2) !important;
-    font-weight: 600;
+#resultData .text-gray-700,
+#resultData .text-gray-800,
+#resultData .text-gray-600 {
+    color: var(--color-text-primary) !important;
 }
 
-/* 默认状态下计算基准按钮使用橙色（初始状态或未选择模式时） */
-#inputTypeRadios input[type="radio"]:checked + label {
-    background: linear-gradient(135deg, var(--color-action) 0%, var(--color-action-hover) 100%);
-    border-color: var(--color-action);
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.3), 0 2px 4px -1px rgba(249, 115, 22, 0.2);
-    font-weight: 600;
+/* 主容器背景覆盖 */
+.max-w-4xl.bg-white {
+    background: var(--color-bg-primary) !important;
+}
+
+/* 填充示例按钮 - Notion风格 */
+#fillExampleButton {
+    background: var(--color-source) !important;
+    border: none !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+#fillExampleButton:hover {
+    background: var(--color-source-dark) !important;
+    box-shadow: var(--shadow-lg) !important;
 }
 
 /* --- End V6.0.0 --- */
@@ -837,9 +928,13 @@ fieldset {
 #resultData > div:nth-child(4) { animation-delay: 0.4s; }
 #resultData > div:nth-child(5) { animation-delay: 0.5s; }
 
-/* MVR模式样式 */
+/* MVR模式样式 - Notion风格 */
 #mvrModeBanner {
     animation: fadeInUp 0.5s ease-out;
+    background: #f3f4f6 !important;
+    border: 1px solid var(--color-border) !important;
+    border-left: 3px solid #7c3aed !important;
+    box-shadow: var(--shadow-sm);
 }
 
 #mvrModeBanner svg {
@@ -850,20 +945,27 @@ fieldset {
 #mvrResults {
     animation: fadeInUp 0.6s ease-out;
     margin-top: 1.5rem;
+    background: var(--color-bg-primary) !important;
+    border: 1px solid var(--color-border) !important;
+    border-left: 3px solid #7c3aed !important;
+    box-shadow: var(--shadow-sm);
 }
 
 #mvrResults h3 {
-    color: var(--color-primary);
+    color: var(--color-text-primary);
     margin-bottom: 1rem;
+    font-weight: 600;
 }
 
 #mvrResults .bg-white {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: var(--color-bg-primary) !important;
+    border: 1px solid var(--color-border) !important;
+    transition: all var(--transition-base);
 }
 
 #mvrResults .bg-white:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-border-dark) !important;
 }
 
 #mvrResults dt {
@@ -874,7 +976,7 @@ fieldset {
 
 #mvrResults dd {
     color: var(--color-text-primary);
-    font-weight: 700;
+    font-weight: 600;
 }
 
 /* MVR结果卡片特殊颜色 */
@@ -906,7 +1008,7 @@ fieldset {
     color: var(--color-sink);
 }
 
-/* 响应式改进 */
+/* 响应式改进 - Notion风格 */
 @media (max-width: 640px) {
     body {
         padding: 0.5rem;
@@ -1056,6 +1158,7 @@ fieldset {
 /* 结果区域动画 */
 #results {
     animation: fadeInUp 0.5s ease-out;
+    background: transparent;
 }
 
 @keyframes fadeInUp {
@@ -1069,42 +1172,60 @@ fieldset {
     }
 }
 
-/* 结果展示区域优化 */
+/* 结果展示区域优化 - Notion风格 */
 #results {
-    background: var(--color-bg-secondary);
-    border-top: 3px solid var(--color-border);
+    background: var(--color-bg-primary);
+    border-top: 1px solid var(--color-border);
+    position: relative;
+}
+
+#results h2 {
+    color: var(--color-text-primary);
+    font-weight: 600;
 }
 
 #resultData > div {
     background: var(--color-bg-primary);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border);
     transition: all var(--transition-base);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 #resultData > div:hover {
     box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    border-color: var(--color-border-dark);
 }
 
 #resultData > div h3 {
-    font-weight: 700;
+    font-weight: 600;
     font-size: 1.125rem;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 2px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border);
     color: var(--color-text-primary);
 }
 
 #sourceResultGroup {
-    background: linear-gradient(135deg, var(--color-source-light) 0%, rgba(219, 234, 254, 0.5) 100%);
-    border-left: 4px solid var(--color-source);
+    background: var(--color-source-light);
+    border-left: 3px solid var(--color-source);
+}
+
+#sourceResultGroup:hover {
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--color-source-dark);
 }
 
 #sinkResultGroup {
-    background: linear-gradient(135deg, var(--color-sink-light) 0%, rgba(254, 226, 226, 0.5) 100%);
-    border-left: 4px solid var(--color-sink);
+    background: var(--color-sink-light);
+    border-left: 3px solid var(--color-sink);
+}
+
+#sinkResultGroup:hover {
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--color-sink-dark);
 }
 
 #resultData dl {
@@ -1137,10 +1258,10 @@ fieldset {
     text-align: right;
 }
 
-/* 系统总览卡片 */
+/* 系统总览卡片 - Notion风格 */
 #resultData .grid > div {
     background: var(--color-bg-primary);
-    border: 2px solid var(--color-border-light);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: 1.25rem;
     box-shadow: var(--shadow-sm);
@@ -1148,9 +1269,8 @@ fieldset {
 }
 
 #resultData .grid > div:hover {
-    border-color: var(--color-action);
+    border-color: var(--color-border-dark);
     box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
 }
 
 #resultData .grid > div dt {
@@ -1211,20 +1331,23 @@ fieldset {
     background: linear-gradient(90deg, var(--color-source) 0%, var(--color-source-dark) 100%);
 }
 
-/* 选型条件样式 */
+/* 选型条件样式 - Notion风格 */
 #selectionCriteria {
-    background: var(--color-bg-secondary);
+    background: var(--color-bg-primary);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--color-border-light);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
 }
 
 #selectionCriteria .bg-white {
+    background: var(--color-bg-primary) !important;
+    border: 1px solid var(--color-border) !important;
     transition: all var(--transition-base);
 }
 
 #selectionCriteria .bg-white:hover {
-    transform: translateY(-2px);
     box-shadow: var(--shadow-md);
+    border-color: var(--color-border-dark) !important;
 }
 
 #selectionCriteria h4 {
@@ -1434,17 +1557,21 @@ button:disabled {
 
 /* ==================== 细节打磨：统一设计系统 ==================== */
 
-/* 统一容器样式 */
+/* 统一容器样式 - Notion风格 */
 .max-w-4xl {
     background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-md);
     overflow: hidden;
+    position: relative;
+    z-index: 1;
 }
 
 /* 统一间距系统 */
 #hpCalcForm {
     padding: 2rem;
+    background: transparent;
 }
 
 @media (max-width: 768px) {
@@ -1459,15 +1586,26 @@ button:disabled {
     }
 }
 
-/* Footer样式优化 */
+/* Footer样式优化 - Notion风格 */
 footer {
-    background: var(--color-bg-secondary);
-    border-top: 2px solid var(--color-border-light);
+    background: var(--color-bg-primary);
+    border-top: 1px solid var(--color-border);
     padding: 1.5rem;
     text-align: center;
-    color: var(--color-text-muted);
+    color: var(--color-text-secondary);
     font-size: 0.8125rem;
     line-height: 1.8;
+    position: relative;
+}
+
+footer p,
+footer span,
+footer a {
+    color: var(--color-text-secondary);
+}
+
+footer .font-semibold {
+    color: var(--color-text-primary);
 }
 
 footer p {
@@ -1492,14 +1630,15 @@ footer a:hover {
     color: var(--color-source-dark);
 }
 
-/* Toast通知优化 */
+/* Toast通知优化 - Notion风格 */
 .toast {
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-lg);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
 }
 
-/* 错误消息样式统一 */
+/* 错误消息样式统一 - Notion风格 */
 .error-message {
     color: var(--color-sink-dark);
     font-weight: 500;
@@ -1508,6 +1647,7 @@ footer a:hover {
     border-radius: var(--radius-md);
     border-left: 3px solid var(--color-sink);
     margin-top: 0.5rem;
+    box-shadow: var(--shadow-sm);
 }
 
 /* 选择框样式统一 */
@@ -1578,27 +1718,19 @@ textarea.input-field {
 
 /* ==================== V6.0.0: 专业工程风格重构 ==================== */
 
-/* 头部区域样式 */
+/* 头部区域样式 - Notion风格 */
 .app-header {
     position: relative;
-    background: linear-gradient(135deg, var(--color-header-gradient-start) 0%, var(--color-header-gradient-end) 100%);
-    color: var(--color-text-inverse);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
     padding: 1.5rem 1.25rem;
-    box-shadow: var(--shadow-lg);
+    border-bottom: 1px solid var(--color-border);
     overflow: hidden;
 }
 
-.app-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(circle at 20% 50%, rgba(249, 115, 22, 0.2) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(239, 68, 68, 0.15) 0%, transparent 50%);
-    pointer-events: none;
+.app-header::before,
+.app-header::after {
+    display: none;
 }
 
 .header-content {
@@ -1620,21 +1752,21 @@ textarea.input-field {
 
 .header-title {
     font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: 0.025em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     margin: 0 0 0.25rem 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     line-height: 1.2;
+    color: var(--color-text-primary);
 }
 
 .header-subtitle {
     font-size: 0.75rem;
     font-weight: 400;
-    opacity: 0.85;
     margin: 0;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     font-family: 'Inter', sans-serif;
+    color: var(--color-text-secondary);
 }
 
 .header-badge {
@@ -1644,34 +1776,23 @@ textarea.input-field {
 .version-badge {
     display: inline-block;
     padding: 0.375rem 0.75rem;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-full);
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.05em;
-    box-shadow: var(--shadow-sm);
+    color: var(--color-text-secondary);
     transition: all var(--transition-base);
 }
 
 .version-badge:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.05);
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-border-dark);
 }
 
 .header-decoration {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, 
-        transparent 0%, 
-        rgba(249, 115, 22, 0.6) 20%, 
-        rgba(239, 68, 68, 0.6) 50%, 
-        rgba(249, 115, 22, 0.6) 80%, 
-        transparent 100%);
+    display: none; /* 已由::after替代 */
 }
 
 @media (max-width: 640px) {
@@ -1697,26 +1818,33 @@ textarea.input-field {
     }
 }
 
-/* 表单区域视觉优化 */
+/* 表单区域视觉优化 - Notion风格卡片 */
 fieldset {
-    border-color: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-neutral);
     border-radius: var(--radius-lg);
     background: var(--color-bg-primary);
     box-shadow: var(--shadow-sm);
     position: relative;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
-    transition: box-shadow var(--transition-base), transform var(--transition-base);
-    border-left: 4px solid var(--color-neutral);
+    transition: all var(--transition-base);
 }
 
 fieldset:hover {
     box-shadow: var(--shadow-md);
+    border-color: var(--color-border-dark);
 }
 
 fieldset:has(legend.text-source) {
     border-left-color: var(--color-source);
-    border-left-width: 4px;
+    border-left-width: 3px;
+    background: var(--color-bg-primary);
+}
+
+fieldset:has(legend.text-source):hover {
+    border-left-color: var(--color-source-dark);
+    box-shadow: var(--shadow-md);
 }
 
 /* 热源参数区域特殊样式 */
@@ -1749,12 +1877,12 @@ fieldset:has(legend.text-source) input.input-field:focus,
 fieldset:has(legend.text-source) select.input-field:focus,
 fieldset:has(legend.text-source) textarea.input-field:focus {
     border-color: var(--color-source);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 fieldset:has(legend.text-source) .input-unit-select:focus {
     border-color: var(--color-source);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* 热源参数区域的标签使用蓝色强调 */
@@ -1773,15 +1901,29 @@ fieldset:has(legend.text-source) .input-unit {
     color: var(--color-source-dark);
     font-weight: 500;
     border-left-color: var(--color-source);
-    background: linear-gradient(to right, var(--color-source-light), var(--color-bg-secondary));
+    background: var(--color-source-light);
 }
 
 fieldset:has(legend.text-sink) {
     border-left-color: var(--color-sink);
+    border-left-width: 3px;
+    background: var(--color-bg-primary);
+}
+
+fieldset:has(legend.text-sink):hover {
+    border-left-color: var(--color-sink-dark);
+    box-shadow: var(--shadow-md);
 }
 
 fieldset:has(legend.text-perf) {
     border-left-color: var(--color-action);
+    border-left-width: 3px;
+    background: var(--color-bg-primary);
+}
+
+fieldset:has(legend.text-perf):hover {
+    border-left-color: var(--color-action-hover);
+    box-shadow: var(--shadow-md);
 }
 
 legend {
@@ -1790,6 +1932,8 @@ legend {
     padding: 0 0.75rem;
     color: var(--color-text-primary);
     background: var(--color-bg-primary);
+    border: none;
+    border-radius: var(--radius-sm);
     position: relative;
     z-index: 1;
 }
